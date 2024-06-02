@@ -68,26 +68,26 @@ class AggregateCompletionOnlyTwoTest extends ContextTestSupport {
 
     private static class MyRepo extends MemoryAggregationRepository {
 
-        private int add;
-        private int get;
-        private int remove;
-        private final AtomicInteger confirm = new AtomicInteger();
+        private AtomicInteger add = new AtomicInteger();
+        private AtomicInteger get = new AtomicInteger();
+        private AtomicInteger remove = new AtomicInteger();
+        private AtomicInteger confirm = new AtomicInteger();
 
         @Override
         public Exchange add(CamelContext camelContext, String key, Exchange exchange) {
-            add++;
+            add.incrementAndGet();
             return super.add(camelContext, key, exchange);
         }
 
         @Override
         public Exchange get(CamelContext camelContext, String key) {
-            get++;
+            get.incrementAndGet();
             return super.get(camelContext, key);
         }
 
         @Override
         public void remove(CamelContext camelContext, String key, Exchange exchange) {
-            remove++;
+            remove.incrementAndGet();
             super.remove(camelContext, key, exchange);
         }
 
@@ -103,15 +103,15 @@ class AggregateCompletionOnlyTwoTest extends ContextTestSupport {
         }
 
         public int getAdd() {
-            return add;
+            return add.get();
         }
 
         public int getGet() {
-            return get;
+            return get.get();
         }
 
         public int getRemove() {
-            return remove;
+            return remove.get();
         }
 
         public int getConfirm() {

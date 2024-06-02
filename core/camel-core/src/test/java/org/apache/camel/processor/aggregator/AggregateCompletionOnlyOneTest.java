@@ -18,6 +18,7 @@ package org.apache.camel.processor.aggregator;
 
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
@@ -71,31 +72,31 @@ public class AggregateCompletionOnlyOneTest extends ContextTestSupport {
 
     private static class MyRepo implements AggregationRepository {
 
-        private int add;
-        private int get;
-        private int remove;
-        private int confirm;
+        private AtomicInteger add = new AtomicInteger();
+        private AtomicInteger get = new AtomicInteger();
+        private AtomicInteger remove = new AtomicInteger();
+        private AtomicInteger confirm = new AtomicInteger();
 
         @Override
         public Exchange add(CamelContext camelContext, String key, Exchange exchange) {
-            add++;
+            add.incrementAndGet();
             return null;
         }
 
         @Override
         public Exchange get(CamelContext camelContext, String key) {
-            get++;
+            get.incrementAndGet();
             return null;
         }
 
         @Override
         public void remove(CamelContext camelContext, String key, Exchange exchange) {
-            remove++;
+            remove.incrementAndGet();
         }
 
         @Override
         public void confirm(CamelContext camelContext, String exchangeId) {
-            confirm++;
+            confirm.incrementAndGet();
         }
 
         @Override
@@ -104,19 +105,19 @@ public class AggregateCompletionOnlyOneTest extends ContextTestSupport {
         }
 
         public int getAdd() {
-            return add;
+            return add.get();
         }
 
         public int getGet() {
-            return get;
+            return get.get();
         }
 
         public int getRemove() {
-            return remove;
+            return remove.get();
         }
 
         public int getConfirm() {
-            return confirm;
+            return confirm.get();
         }
     }
 }

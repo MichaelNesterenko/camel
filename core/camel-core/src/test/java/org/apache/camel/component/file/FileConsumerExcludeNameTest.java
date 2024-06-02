@@ -19,8 +19,9 @@ package org.apache.camel.component.file;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
+
+import static org.awaitility.Awaitility.await;
 
 /**
  * Unit test that file consumer will exclude pre and postfixes
@@ -29,12 +30,11 @@ public class FileConsumerExcludeNameTest extends ContextTestSupport {
 
     @Test
     public void testExcludePreAndPostfixes() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceivedInAnyOrder("Reports1", "Reports2", "Reports3");
+        getMockEndpoint("mock:result").expectedBodiesReceivedInAnyOrder("Reports1", "Reports2", "Reports3");
 
         prepareFiles();
 
-        assertMockEndpointsSatisfied();
+        await().untilAsserted(() -> assertMockEndpointsSatisfied());
     }
 
     private void prepareFiles() throws Exception {

@@ -16,10 +16,13 @@
  */
 package org.apache.camel.component.file;
 
+import java.time.Duration;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -35,7 +38,7 @@ public class FileConsumerIncludeNameTest extends ContextTestSupport {
 
         sendFiles();
 
-        mock.assertIsSatisfied();
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> mock.assertIsSatisfied());
     }
 
     private void sendFiles() throws Exception {

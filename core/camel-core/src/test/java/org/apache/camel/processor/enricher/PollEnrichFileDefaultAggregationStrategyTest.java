@@ -16,17 +16,22 @@
  */
 package org.apache.camel.processor.enricher;
 
+import java.time.Duration;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class PollEnrichFileDefaultAggregationStrategyTest extends ContextTestSupport {
 
+    final int ENRICH_TIMEOUT = 10_000;
+    final int AWAIT_TIMEOUT = ENRICH_TIMEOUT * 2;
+
     @Test
     public void testPollEnrichDefaultAggregationStrategyBody() throws Exception {
-
         getMockEndpoint("mock:start").expectedBodiesReceived("Start");
 
         MockEndpoint mock = getMockEndpoint("mock:result");
@@ -34,18 +39,13 @@ public class PollEnrichFileDefaultAggregationStrategyTest extends ContextTestSup
         mock.expectedFileExists(testFile("enrich/.done/AAA.fin"));
         mock.expectedFileExists(testFile("enrichdata/.done/AAA.dat"));
 
-        template.sendBodyAndHeader(fileUri("enrich"), "Start",
-                Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(fileUri("enrich"), "Start", Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(fileUri("enrichdata"), "Big file", Exchange.FILE_NAME, "AAA.dat");
 
-        log.info("Sleeping for 0.25 sec before writing enrichdata file");
-        Thread.sleep(250);
-        template.sendBodyAndHeader(fileUri("enrichdata"), "Big file",
-                Exchange.FILE_NAME, "AAA.dat");
-        log.info("... write done");
-
-        assertMockEndpointsSatisfied();
-
-        assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
+        Awaitility.await().atMost(Duration.ofMillis(AWAIT_TIMEOUT)).untilAsserted(() -> {
+            assertMockEndpointsSatisfied();
+            assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
+        });
     }
 
     @Override

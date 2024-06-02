@@ -68,7 +68,7 @@ public class WireTapVoidBeanTest extends ContextTestSupport {
 
     public static class MyTapBean {
 
-        private String tapped;
+        private volatile String tapped;
 
         public void tapSomething(String body) {
             LOG.info("Wire tapping: {}", body);

@@ -18,6 +18,7 @@ package org.apache.camel.processor.async;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -40,13 +41,12 @@ public class AsyncEndpointCustomRoutePolicyTest extends ContextTestSupport {
 
     private static class MyCustomRoutePolicy extends RoutePolicySupport {
 
-        private volatile int invoked;
-        private volatile AtomicBoolean stopped = new AtomicBoolean();
+        private AtomicInteger invoked = new AtomicInteger();
+        private AtomicBoolean stopped = new AtomicBoolean();
 
         @Override
         public void onExchangeDone(Route route, Exchange exchange) {
-            invoked++;
-            if (invoked >= 2) {
+            if (invoked.incrementAndGet() >= 2) {
                 try {
                     stopped.set(true);
                     stopConsumer(route.getConsumer());

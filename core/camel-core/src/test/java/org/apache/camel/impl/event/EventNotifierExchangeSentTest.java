@@ -17,6 +17,7 @@
 package org.apache.camel.impl.event;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EventNotifierExchangeSentTest extends ContextTestSupport {
 
-    protected final List<CamelEvent> events = new ArrayList<>();
+    protected final List<CamelEvent> events = Collections.synchronizedList(new ArrayList<>());
 
     @BeforeEach
     public void clearEvents() throws Exception {

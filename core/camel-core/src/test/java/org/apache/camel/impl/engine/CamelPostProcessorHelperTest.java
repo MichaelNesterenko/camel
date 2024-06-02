@@ -592,7 +592,7 @@ public class CamelPostProcessorHelperTest extends ContextTestSupport {
 
     private static class MySynchronization extends SynchronizationAdapter {
 
-        private boolean onDone;
+        private volatile boolean onDone;
 
         @Override
         public void onDone(Exchange exchange) {

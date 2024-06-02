@@ -17,6 +17,8 @@
 package org.apache.camel.component.file;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.camel.Consumer;
 import org.apache.camel.ContextTestSupport;
@@ -36,8 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class FileConsumerPollStrategyTest extends ContextTestSupport {
 
-    private static int counter;
-    private static String event = "";
+    private static AtomicInteger counter = new AtomicInteger();
+    private static AtomicReference<String> event = new AtomicReference<>("");
 
     @Override
     protected Registry createCamelRegistry() throws Exception {
@@ -68,14 +70,14 @@ public class FileConsumerPollStrategyTest extends ContextTestSupport {
         oneExchangeDone.matchesWaitTime();
 
         // give the file consumer a bit of time
-        Awaitility.await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertTrue(event.startsWith("rollbackcommit")));
+        Awaitility.await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertTrue(event.get().startsWith("rollbackcommit")));
     }
 
     private static class MyPollStrategy implements PollingConsumerPollStrategy {
 
         @Override
         public boolean begin(Consumer consumer, Endpoint endpoint) {
-            if (counter++ == 0) {
+            if (counter.getAndIncrement() == 0) {
                 // simulate an error on first poll
                 throw new IllegalArgumentException("Damn I cannot do this");
             }
@@ -84,13 +86,13 @@ public class FileConsumerPollStrategyTest extends ContextTestSupport {
 
         @Override
         public void commit(Consumer consumer, Endpoint endpoint, int polledMessages) {
-            event += "commit";
+            event.updateAndGet(e -> e + "commit");
         }
 
         @Override
         public boolean rollback(Consumer consumer, Endpoint endpoint, int retryCounter, Exception cause) throws Exception {
             if (cause.getMessage().equals("Damn I cannot do this")) {
-                event += "rollback";
+                event.updateAndGet(e -> e + "rollback");
             }
             return false;
         }

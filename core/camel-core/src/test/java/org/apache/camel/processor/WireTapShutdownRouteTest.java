@@ -81,7 +81,7 @@ public class WireTapShutdownRouteTest extends ContextTestSupport {
 
     public static class MyTapBean {
 
-        private String tapped;
+        private volatile String tapped;
 
         public void tapSomething(String body) throws Exception {
             try {

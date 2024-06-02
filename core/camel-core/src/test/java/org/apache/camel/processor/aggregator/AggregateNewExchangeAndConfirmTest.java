@@ -82,7 +82,7 @@ public class AggregateNewExchangeAndConfirmTest extends ContextTestSupport {
 
     private class MyRepo extends MemoryAggregationRepository {
 
-        private String id;
+        private volatile String id;
 
         @Override
         public void confirm(CamelContext camelContext, String exchangeId) {

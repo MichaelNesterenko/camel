@@ -16,18 +16,23 @@
  */
 package org.apache.camel.processor.enricher;
 
+import java.time.Duration;
+
 import org.apache.camel.AggregationStrategy;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class PollEnrichFileCustomAggregationStrategyTest extends ContextTestSupport {
 
+    final int ENRICH_TIMEOUT = 10_000;
+    final int AWAIT_TIMEOUT = ENRICH_TIMEOUT * 2;
+
     @Test
     public void testPollEnrichCustomAggregationStrategyBody() throws Exception {
-
         getMockEndpoint("mock:start").expectedBodiesReceived("Start");
 
         MockEndpoint mock = getMockEndpoint("mock:result");
@@ -35,18 +40,13 @@ public class PollEnrichFileCustomAggregationStrategyTest extends ContextTestSupp
         mock.expectedFileExists(testFile("enrich/.done/AAA.fin"));
         mock.expectedFileExists(testFile("enrichdata/.done/AAA.dat"));
 
-        template.sendBodyAndHeader(fileUri("enrich"), "Start",
-                Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(fileUri("enrich"), "Start", Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(fileUri("enrichdata"), "Big file", Exchange.FILE_NAME, "AAA.dat");
 
-        log.info("Sleeping for 0.5 sec before writing enrichdata file");
-        Thread.sleep(500);
-        template.sendBodyAndHeader(fileUri("enrichdata"), "Big file",
-                Exchange.FILE_NAME, "AAA.dat");
-        log.info("... write done");
-
-        assertMockEndpointsSatisfied();
-
-        assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
+        Awaitility.await().timeout(Duration.ofMillis(AWAIT_TIMEOUT)).untilAsserted(() -> {
+            assertMockEndpointsSatisfied();
+            assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
+        });
     }
 
     @Override
@@ -58,7 +58,7 @@ public class PollEnrichFileCustomAggregationStrategyTest extends ContextTestSupp
                         .to("mock:start")
                         .pollEnrich(
                                 fileUri("enrichdata?initialDelay=0&delay=10&readLock=markerFile&move=.done"),
-                                10000, new ReplaceAggregationStrategy())
+                                ENRICH_TIMEOUT, new ReplaceAggregationStrategy())
                         .to("mock:result");
             }
         };

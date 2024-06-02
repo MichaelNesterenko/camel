@@ -78,7 +78,7 @@ public class WireTapBeanAsProcessorTest extends ContextTestSupport {
 
     public static class MyBean implements Processor {
 
-        private String tapped;
+        private volatile String tapped;
 
         @Override
         public void process(Exchange exchange) throws Exception {

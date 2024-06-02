@@ -16,9 +16,12 @@
  */
 package org.apache.camel.component.file;
 
+import java.time.Duration;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class FileMoveAndMoveFailedIssueTest extends ContextTestSupport {
@@ -30,7 +33,7 @@ public class FileMoveAndMoveFailedIssueTest extends ContextTestSupport {
 
         template.sendBodyAndHeader(fileUri("input"), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        awaitMockEndpointsSatisfied();
     }
 
     @Test
@@ -40,7 +43,11 @@ public class FileMoveAndMoveFailedIssueTest extends ContextTestSupport {
 
         template.sendBodyAndHeader(fileUri("input"), "Kaboom", Exchange.FILE_NAME, "bomb.txt");
 
-        assertMockEndpointsSatisfied();
+        awaitMockEndpointsSatisfied();
+    }
+
+    private void awaitMockEndpointsSatisfied() {
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> assertMockEndpointsSatisfied());
     }
 
     @Override
