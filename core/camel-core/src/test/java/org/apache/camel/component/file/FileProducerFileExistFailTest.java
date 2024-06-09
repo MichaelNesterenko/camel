@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -35,17 +37,18 @@ public class FileProducerFileExistFailTest extends ContextTestSupport {
         mock.expectedBodiesReceived("Hello World");
         mock.expectedFileExists(testFile("hello.txt"), "Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         CamelExecutionException e = assertThrows(CamelExecutionException.class,
-                () -> template.sendBodyAndHeader(fileUri("?fileExist=Fail"), "Bye World", Exchange.FILE_NAME, "hello.txt"));
+                () -> template.sendBodyAndHeader(sfpUri(fileUri("?fileExist=Fail")), "Bye World", Exchange.FILE_NAME,
+                        "hello.txt"));
         GenericFileOperationFailedException cause
                 = assertIsInstanceOf(GenericFileOperationFailedException.class, e.getCause());
         assertEquals(
                 FileUtil.normalizePath("File already exist: " + testFile("hello.txt").toString() + ". Cannot write new file."),
                 cause.getMessage());
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

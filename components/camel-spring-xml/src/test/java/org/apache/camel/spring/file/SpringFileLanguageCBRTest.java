@@ -36,7 +36,7 @@ public class SpringFileLanguageCBRTest extends ContextTestSupport {
         getMockEndpoint("mock:dat").expectedMessageCount(0);
         getMockEndpoint("mock:other").expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         assertMockEndpointsSatisfied();
     }
@@ -47,7 +47,7 @@ public class SpringFileLanguageCBRTest extends ContextTestSupport {
         getMockEndpoint("mock:dat").expectedMessageCount(1);
         getMockEndpoint("mock:other").expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.dat");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.dat");
 
         assertMockEndpointsSatisfied();
     }
@@ -58,7 +58,7 @@ public class SpringFileLanguageCBRTest extends ContextTestSupport {
         getMockEndpoint("mock:dat").expectedMessageCount(0);
         getMockEndpoint("mock:other").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hi World", Exchange.FILE_NAME, "hi.foo");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hi World", Exchange.FILE_NAME, "hi.foo");
 
         assertMockEndpointsSatisfied();
     }

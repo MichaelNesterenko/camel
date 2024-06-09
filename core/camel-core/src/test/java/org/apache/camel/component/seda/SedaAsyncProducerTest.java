@@ -26,6 +26,7 @@ import org.apache.camel.WaitForTaskToComplete;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.support.DefaultExchange;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,13 +51,15 @@ public class SedaAsyncProducerTest extends ContextTestSupport {
         // I should happen before mock
         route = route + "send";
 
-        assertMockEndpointsSatisfied();
+        Awaitility.await().untilAsserted(() -> {
+            assertMockEndpointsSatisfied();
 
-        assertEquals("sendprocess", route, "Send should occur before processor");
+            assertEquals("sendprocess", route, "Send should occur before processor");
 
-        // and get the response with the future handle
-        String response = future.get();
-        assertEquals("Bye World", response);
+            // and get the response with the future handle
+            String response = future.get();
+            assertEquals("Bye World", response);
+        });
     }
 
     @Test
@@ -74,12 +77,14 @@ public class SedaAsyncProducerTest extends ContextTestSupport {
         // I should not happen before mock
         route = route + "send";
 
-        assertMockEndpointsSatisfied();
+        Awaitility.await().untilAsserted(() -> {
+            assertMockEndpointsSatisfied();
 
-        assertEquals("processsend", route, "Send should occur before processor");
+            assertEquals("processsend", route, "Send should occur before processor");
 
-        String response = exchange.getMessage().getBody(String.class);
-        assertEquals("Bye World", response);
+            String response = exchange.getMessage().getBody(String.class);
+            assertEquals("Bye World", response);
+        });
     }
 
     @Override

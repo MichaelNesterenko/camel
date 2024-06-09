@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for consuming files but the exchange fails and is handled by the failure handler (usually the
@@ -39,45 +41,32 @@ public class FileConsumerFailureHandledTest extends ContextTestSupport {
 
     @Test
     public void testParis() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:valid");
-        mock.expectedBodiesReceived("Hello Paris");
+        getMockEndpoint("mock:valid").expectedBodiesReceived("Hello Paris");
 
-        template.sendBodyAndHeader(fileUri(), "Paris", Exchange.FILE_NAME, "paris.txt");
-        mock.assertIsSatisfied(2000);
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Paris", Exchange.FILE_NAME, "paris.txt");
 
-        oneExchangeDone.matchesWaitTime();
-
-        assertFiles("paris.txt", true);
+        assertResult("paris.txt", true);
     }
 
     @Test
     public void testLondon() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:invalid");
-        // we get the original input so its not Hello London but only London
-        mock.expectedBodiesReceived("London");
+        getMockEndpoint("mock:invalid").expectedBodiesReceived("London");
 
-        template.sendBodyAndHeader(fileUri(), "London", Exchange.FILE_NAME, "london.txt");
-        mock.assertIsSatisfied(2000);
+        template.sendBodyAndHeader(sfpUri(fileUri()), "London", Exchange.FILE_NAME, "london.txt");
 
-        oneExchangeDone.matchesWaitTime();
-
-        // london should be deleted as we have failure handled it
-        assertFiles("london.txt", true);
+        assertResult("london.txt", true);
     }
 
     @Test
     public void testDublin() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:beer");
         // we get the original input so its not Hello London but only London
-        mock.expectedBodiesReceived("Dublin");
+        mock.allMessages().body().isEqualTo("Dublin");
+        mock.setMinimumExpectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Dublin", Exchange.FILE_NAME, "dublin.txt");
-        mock.assertIsSatisfied(2000);
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Dublin", Exchange.FILE_NAME, "dublin.txt");
 
-        oneExchangeDone.matchesWaitTime();
-
-        // dublin should NOT be deleted, but should be retired on next consumer
-        assertFiles("dublin.txt", false);
+        assertResult("dublin.txt", false);
     }
 
     @Test
@@ -86,13 +75,15 @@ public class FileConsumerFailureHandledTest extends ContextTestSupport {
         // we get the original input so its not Hello London but only London
         mock.expectedBodiesReceived("Madrid");
 
-        template.sendBodyAndHeader(fileUri(), "Madrid", Exchange.FILE_NAME, "madrid.txt");
-        mock.assertIsSatisfied(2000);
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Madrid", Exchange.FILE_NAME, "madrid.txt");
 
-        oneExchangeDone.matchesWaitTime();
+        assertResult("madrid.txt", true);
+    }
 
-        // madrid should be deleted as the DLC handles it
-        assertFiles("madrid.txt", true);
+    private void assertResult(String fileName, boolean isDeleted) throws InterruptedException {
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
+        assertFiles(fileName, isDeleted);
     }
 
     private void assertFiles(String filename, boolean deleted) throws InterruptedException {

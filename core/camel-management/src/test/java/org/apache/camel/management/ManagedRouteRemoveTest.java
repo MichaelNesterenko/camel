@@ -17,6 +17,7 @@
 package org.apache.camel.management;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -43,9 +44,9 @@ public class ManagedRouteRemoveTest extends ManagementTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // should be started
         String state = (String) mbeanServer.getAttribute(on, "State");

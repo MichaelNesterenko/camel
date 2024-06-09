@@ -68,11 +68,10 @@ public class FileConsumerPollStrategyPolledMessagesTest extends ContextTestSuppo
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(2);
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // wait for commit to be issued
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-
         assertEquals(2, maxPolls);
     }
 

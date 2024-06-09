@@ -51,10 +51,10 @@ public class FileIdempotentReadLockTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(2);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         assertTrue(notify.matches(5, TimeUnit.SECONDS));
 

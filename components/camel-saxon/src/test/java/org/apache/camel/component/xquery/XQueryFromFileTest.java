@@ -42,7 +42,7 @@ public class XQueryFromFileTest extends CamelTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory),
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)),
                 "<mail><subject>Hey</subject><body>Hello world!</body></mail>",
                 Exchange.FILE_NAME, "body.xml");
 

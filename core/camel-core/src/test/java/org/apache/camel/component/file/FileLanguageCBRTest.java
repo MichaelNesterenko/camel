@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -29,9 +31,9 @@ public class FileLanguageCBRTest extends ContextTestSupport {
         getMockEndpoint("mock:dat").expectedMessageCount(0);
         getMockEndpoint("mock:other").expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -40,9 +42,9 @@ public class FileLanguageCBRTest extends ContextTestSupport {
         getMockEndpoint("mock:dat").expectedMessageCount(1);
         getMockEndpoint("mock:other").expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.dat");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.dat");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -51,9 +53,9 @@ public class FileLanguageCBRTest extends ContextTestSupport {
         getMockEndpoint("mock:dat").expectedMessageCount(0);
         getMockEndpoint("mock:other").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hi World", Exchange.FILE_NAME, "hi.foo");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hi World", Exchange.FILE_NAME, "hi.foo");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

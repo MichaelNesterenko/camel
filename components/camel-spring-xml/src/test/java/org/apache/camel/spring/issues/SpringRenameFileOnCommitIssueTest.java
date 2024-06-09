@@ -35,7 +35,7 @@ public class SpringRenameFileOnCommitIssueTest extends ContextTestSupport {
         String body
                 = "<?xml version=\"1.0\"?><persons xmlns=\"http://foo.com/bar\"><person name=\"James\"/><person name=\"Claus\"/></persons>";
 
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "hello.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "hello.xml");
 
         assertMockEndpointsSatisfied();
     }

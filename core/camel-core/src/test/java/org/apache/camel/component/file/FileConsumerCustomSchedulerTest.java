@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Consumer;
@@ -49,7 +50,7 @@ public class FileConsumerCustomSchedulerTest extends ContextTestSupport {
 
         context.getRouteController().startRoute("foo");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // the scheduler is only run once, and we can configure its properties
         assertEquals(1, scheduler.getCounter());
@@ -73,7 +74,7 @@ public class FileConsumerCustomSchedulerTest extends ContextTestSupport {
         private Timer timer;
         private TimerTask timerTask;
         private volatile int counter;
-        private String foo;
+        private volatile String foo;
 
         @Override
         public void onInit(Consumer consumer) {

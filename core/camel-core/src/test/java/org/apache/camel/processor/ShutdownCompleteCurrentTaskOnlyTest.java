@@ -16,12 +16,13 @@
  */
 package org.apache.camel.processor;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.ShutdownRunningTask;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,30 +31,26 @@ public class ShutdownCompleteCurrentTaskOnlyTest extends ContextTestSupport {
 
     public static final String FILE_QUERY = "?initialDelay=0&delay=10&synchronous=true";
 
-    @Override
-    @BeforeEach
-    public void setUp() throws Exception {
-        super.setUp();
-        String url = fileUri(FILE_QUERY);
-        template.sendBodyAndHeader(url, "A", Exchange.FILE_NAME, "a.txt");
-        template.sendBodyAndHeader(url, "B", Exchange.FILE_NAME, "b.txt");
-        template.sendBodyAndHeader(url, "C", Exchange.FILE_NAME, "c.txt");
-        template.sendBodyAndHeader(url, "D", Exchange.FILE_NAME, "d.txt");
-        template.sendBodyAndHeader(url, "E", Exchange.FILE_NAME, "e.txt");
-    }
-
     @Test
     public void testShutdownCompleteCurrentTaskOnly() throws Exception {
         // give it 20 seconds to shutdown
         context.getShutdownStrategy().setTimeout(20);
 
         MockEndpoint bar = getMockEndpoint("mock:bar");
-        bar.expectedMinimumMessageCount(1);
+        bar.expectedMinimumMessageCount(2);
+        bar.whenExchangeReceived(2, e -> {
+            // shutdown during processing
+            context.stop();
+        });
 
-        assertMockEndpointsSatisfied();
+        String url = sfpUri(fileUri(FILE_QUERY));
+        template.sendBodyAndHeader(url, "A", Exchange.FILE_NAME, "a.txt");
+        template.sendBodyAndHeader(url, "B", Exchange.FILE_NAME, "b.txt");
+        template.sendBodyAndHeader(url, "C", Exchange.FILE_NAME, "c.txt");
+        template.sendBodyAndHeader(url, "D", Exchange.FILE_NAME, "d.txt");
+        template.sendBodyAndHeader(url, "E", Exchange.FILE_NAME, "e.txt");
 
-        // shutdown during processing
-        context.stop();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // should NOT route all 5
         assertTrue(bar.getReceivedCounter() < 5, "Should NOT complete all messages, was: " + bar.getReceivedCounter());

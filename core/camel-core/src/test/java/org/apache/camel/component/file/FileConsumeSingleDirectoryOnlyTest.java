@@ -16,10 +16,11 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -29,14 +30,13 @@ public class FileConsumeSingleDirectoryOnlyTest extends ContextTestSupport {
 
     @Test
     public void testConsumeFileOnly() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceivedInAnyOrder("Hello World", "Bye World");
+        getMockEndpoint("mock:result").expectedBodiesReceivedInAnyOrder("Hello World", "Bye World");
 
-        template.sendBodyAndHeader(fileUri("2008"), "2008 Report", Exchange.FILE_NAME, "report2008.txt");
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "report.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "report2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("2008")), "2008 Report", Exchange.FILE_NAME, "report2008.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "report.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "report2.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

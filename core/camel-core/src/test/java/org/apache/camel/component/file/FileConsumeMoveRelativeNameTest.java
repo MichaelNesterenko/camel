@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -33,10 +35,10 @@ public class FileConsumeMoveRelativeNameTest extends ContextTestSupport {
     public void testMultiDir() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceivedInAnyOrder("Bye World", "Hello World", "Goodday World");
-
         mock.expectedFileExists(testFile(".done/bye.txt.old"));
         mock.expectedFileExists(testFile(".done/sub/hello.txt.old"));
         mock.expectedFileExists(testFile(".done/sub/sub2/goodday.txt.old"));
+
         String fileUrl = fileUri(FILE_QUERY);
         template.sendBodyAndHeader(fileUrl, "Bye World", Exchange.FILE_NAME, "bye.txt");
         template.sendBodyAndHeader(fileUrl, "Hello World", Exchange.FILE_NAME, "sub/hello.txt");
@@ -44,7 +46,7 @@ public class FileConsumeMoveRelativeNameTest extends ContextTestSupport {
 
         context.getRouteController().startRoute("foo");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

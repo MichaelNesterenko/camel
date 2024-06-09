@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.ConsumerTemplate;
 import org.apache.camel.ContextTestSupport;
@@ -39,14 +41,11 @@ public class FileConsumePollEnrichFileUsingProcessorTest extends ContextTestSupp
         mock.expectedFileExists(testFile("enrichdata/.done/AAA.dat"));
         mock.expectedFileExists(testFile("enrichdata/BBB.dat"));
 
-        template.sendBodyAndHeader(fileUri("enrichdata"), "Big file",
-                Exchange.FILE_NAME, "AAA.dat");
-        template.sendBodyAndHeader(fileUri("enrichdata"),
-                "Other Big file", Exchange.FILE_NAME, "BBB.dat");
-        template.sendBodyAndHeader(fileUri("enrich"), "Start",
-                Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrichdata")), "Big file", Exchange.FILE_NAME, "AAA.dat");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrichdata")), "Other Big file", Exchange.FILE_NAME, "BBB.dat");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrich")), "Start", Exchange.FILE_NAME, "AAA.fin");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

@@ -19,6 +19,7 @@ package org.apache.camel.impl;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.camel.Endpoint;
@@ -182,7 +183,7 @@ public class DefaultEndpointRegistryTest {
                 });
             }
 
-            allThreadCompletionSemaphore.await();
+            allThreadCompletionSemaphore.await(60, TimeUnit.SECONDS);
 
             assertNotNull(endpointRegistry.values().toArray());
 

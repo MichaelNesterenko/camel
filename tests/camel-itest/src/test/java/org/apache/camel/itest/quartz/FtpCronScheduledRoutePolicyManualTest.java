@@ -48,7 +48,7 @@ public class FtpCronScheduledRoutePolicyManualTest extends CamelTestSupport {
 
     @Test
     void testFtpCronScheduledRoutePolicyTest() throws Exception {
-        template.sendBodyAndHeader("file:res/home/myapp", "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri("file:res/home/myapp"), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         Thread.sleep(10 * 1000 * 60);
     }

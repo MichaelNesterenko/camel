@@ -16,18 +16,18 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
 public class FileRecursiveDepthTest extends ContextTestSupport {
 
     @Test
     public void testDepth() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceivedInAnyOrder("a2", "b2");
+        getMockEndpoint("mock:result").expectedBodiesReceivedInAnyOrder("a2", "b2");
 
         template.sendBodyAndHeader(fileUri("depth"), "a", Exchange.FILE_NAME, "a.txt");
         template.sendBodyAndHeader(fileUri("depth"), "b", Exchange.FILE_NAME, "b.txt");
@@ -36,15 +36,12 @@ public class FileRecursiveDepthTest extends ContextTestSupport {
         template.sendBodyAndHeader(fileUri("depth/bar"), "b2", Exchange.FILE_NAME, "b2.txt");
         template.sendBodyAndHeader(fileUri("depth/bar/foo"), "b3", Exchange.FILE_NAME, "b.txt");
 
-        // only expect 2 of the 6 sent, those at depth 2
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testDepthMin2Max99() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
-
-        mock.expectedBodiesReceivedInAnyOrder("a2", "b2", "a3", "b3");
+        getMockEndpoint("mock:result").expectedBodiesReceivedInAnyOrder("a2", "b2", "a3", "b3");
 
         template.sendBodyAndHeader(fileUri("depth2"), "a", Exchange.FILE_NAME, "a.txt");
         template.sendBodyAndHeader(fileUri("depth2"), "b", Exchange.FILE_NAME, "b.txt");
@@ -53,14 +50,12 @@ public class FileRecursiveDepthTest extends ContextTestSupport {
         template.sendBodyAndHeader(fileUri("depth2/foo/bar"), "a3", Exchange.FILE_NAME, "a3.txt");
         template.sendBodyAndHeader(fileUri("depth2/bar/foo"), "b3", Exchange.FILE_NAME, "b3.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testMin1Max1() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
-
-        mock.expectedBodiesReceivedInAnyOrder("a", "b");
+        getMockEndpoint("mock:result").expectedBodiesReceivedInAnyOrder("a", "b");
 
         template.sendBodyAndHeader(fileUri("depth3"), "a", Exchange.FILE_NAME, "a.txt");
         template.sendBodyAndHeader(fileUri("depth3"), "b", Exchange.FILE_NAME, "b.txt");
@@ -69,7 +64,7 @@ public class FileRecursiveDepthTest extends ContextTestSupport {
         template.sendBodyAndHeader(fileUri("depth3/bar"), "b2", Exchange.FILE_NAME, "b.txt");
         template.sendBodyAndHeader(fileUri("depth3/bar/foo"), "b3", Exchange.FILE_NAME, "b.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -77,7 +72,6 @@ public class FileRecursiveDepthTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-
                 from(fileUri("depth?initialDelay=0&delay=10&recursive=true&minDepth=2&maxDepth=2"))
                         .convertBodyTo(String.class).to("mock:result");
 
@@ -89,4 +83,5 @@ public class FileRecursiveDepthTest extends ContextTestSupport {
             }
         };
     }
+
 }

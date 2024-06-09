@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FileSplitInSplitTest extends ContextTestSupport {
 
@@ -45,7 +47,7 @@ public class FileSplitInSplitTest extends ContextTestSupport {
             sb.append("Block2 Line ").append(i).append(LS);
         }
 
-        template.sendBodyAndHeader(fileUri(), sb.toString(), Exchange.FILE_NAME, "input.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), sb.toString(), Exchange.FILE_NAME, "input.txt");
 
         // start route
         MockEndpoint mock = getMockEndpoint("mock:result");
@@ -53,7 +55,8 @@ public class FileSplitInSplitTest extends ContextTestSupport {
 
         context.getRouteController().startRoute("foo");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // check one file has expected number of lines +1 saying split is
         // complete.
@@ -69,7 +72,6 @@ public class FileSplitInSplitTest extends ContextTestSupport {
 
         lines = txt.split(LS);
         assertEquals(size + 1, lines.length, "Should be " + (size + 1) + " lines");
-
     }
 
     @Override

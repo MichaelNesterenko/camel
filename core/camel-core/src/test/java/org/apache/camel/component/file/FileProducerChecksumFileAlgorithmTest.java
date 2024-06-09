@@ -21,8 +21,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.converter.stream.InputStreamCache;
 import org.junit.jupiter.api.Test;
 
-import static org.apache.camel.TestSupport.assertFileExists;
-
 public class FileProducerChecksumFileAlgorithmTest extends ContextTestSupport {
 
     @Test

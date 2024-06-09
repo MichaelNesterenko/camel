@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -40,9 +41,9 @@ public class FileConsumerBeginExpressionRenameStrategyTest extends ContextTestSu
         mock.expectedMessageCount(1);
         mock.expectedBodiesReceived("Hello Paris");
 
-        template.sendBodyAndHeader(fileUri("reports"), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("reports")), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -54,12 +55,11 @@ public class FileConsumerBeginExpressionRenameStrategyTest extends ContextTestSu
             fw.flush();
         }
 
-        MockEndpoint mock = getMockEndpoint("mock:report");
-        mock.expectedBodiesReceived("Hello London");
+        getMockEndpoint("mock:report").expectedBodiesReceived("Hello London");
 
-        template.sendBodyAndHeader(fileUri("reports"), "Hello London", Exchange.FILE_NAME, "london.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("reports")), "Hello London", Exchange.FILE_NAME, "london.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

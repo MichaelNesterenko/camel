@@ -38,9 +38,9 @@ public class NewFileConsumerTest extends ContextTestSupport {
     public void testNewFileConsumer() throws Exception {
         getMockEndpoint("mock:result").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         oneExchangeDone.matchesWaitTime();
 
         await("postPollCheck invocation").atMost(1, TimeUnit.SECONDS).until(myFile::isPost);

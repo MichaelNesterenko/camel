@@ -16,13 +16,14 @@
  */
 package org.apache.camel.component.file;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,7 @@ public class FileProducerCharsetUTFOptimizedTest extends ContextTestSupport {
     private byte[] utf = "ABC\u00e6D\uD867\uDE3DE\uD83C\uDFF3".getBytes(StandardCharsets.UTF_8);
 
     @BeforeEach
-    public void createData() throws IOException {
+    public void createData() throws Exception {
         testDirectory("input", true);
 
         log.debug("utf: {}", new String(utf, StandardCharsets.UTF_8));
@@ -49,27 +50,27 @@ public class FileProducerCharsetUTFOptimizedTest extends ContextTestSupport {
         try (OutputStream fos = Files.newOutputStream(testFile("input/input.txt"))) {
             fos.write(utf);
         }
+
+        initRoute();
     }
 
     @Test
     public void testFileProducerCharsetUTFOptimized() throws Exception {
-        oneExchangeDone.matchesWaitTime();
-
-        assertTrue(Files.exists(testFile("output.txt")), "File should exist");
-
-        byte[] data = Files.readAllBytes(testFile("output.txt"));
-        assertArrayEquals(utf, data);
+        Awaitility.await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+            assertTrue(Files.exists(testFile("output.txt")), "File should exist");
+            assertArrayEquals(utf, Files.readAllBytes(testFile("output.txt")));
+        });
     }
 
-    @Override
-    protected RouteBuilder createRouteBuilder() throws Exception {
-        return new RouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                from(fileUri("input?initialDelay=0&delay=10&noop=true"))
-                        // no charset so its optimized to write directly
-                        .to(fileUri("?fileName=output.txt"));
-            }
-        };
+    private void initRoute() throws Exception {
+        context.addRoutes(
+                new RouteBuilder() {
+                    @Override
+                    public void configure() throws Exception {
+                        from(fileUri("input?initialDelay=0&delay=10&noop=true"))
+                                // no charset so its optimized to write directly
+                                .to(fileUri("?fileName=output.txt"));
+                    }
+                });
     }
 }

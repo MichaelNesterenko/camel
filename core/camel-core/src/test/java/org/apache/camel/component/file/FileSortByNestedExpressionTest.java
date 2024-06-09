@@ -16,10 +16,11 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -32,8 +33,7 @@ public class FileSortByNestedExpressionTest extends ContextTestSupport {
 
         template.sendBodyAndHeader(fileUri(folder), "Hello London", Exchange.FILE_NAME, "london.txt");
 
-        template.sendBodyAndHeader(fileUri(folder), "Hello Copenhagen", Exchange.FILE_NAME,
-                "copenhagen.xml");
+        template.sendBodyAndHeader(fileUri(folder), "Hello Copenhagen", Exchange.FILE_NAME, "copenhagen.xml");
 
         template.sendBodyAndHeader(fileUri(folder), "Hello Dublin", Exchange.FILE_NAME, "dublin.txt");
     }
@@ -42,6 +42,8 @@ public class FileSortByNestedExpressionTest extends ContextTestSupport {
     public void testSortNestedFiles() throws Exception {
         prepareFolder("a");
 
+        getMockEndpoint("mock:result").expectedBodiesReceived("Hello Dublin", "Hello London", "Hello Paris",
+                "Hello Copenhagen");
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -49,18 +51,16 @@ public class FileSortByNestedExpressionTest extends ContextTestSupport {
                         .to("mock:result");
             }
         });
-        context.start();
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceived("Hello Dublin", "Hello London", "Hello Paris", "Hello Copenhagen");
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testSortNestedFilesReverse() throws Exception {
         prepareFolder("b");
 
+        getMockEndpoint("mock:reverse").expectedBodiesReceived("Hello Paris", "Hello London", "Hello Dublin",
+                "Hello Copenhagen");
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -68,12 +68,8 @@ public class FileSortByNestedExpressionTest extends ContextTestSupport {
                         .to("mock:reverse");
             }
         });
-        context.start();
 
-        MockEndpoint reverse = getMockEndpoint("mock:reverse");
-        reverse.expectedBodiesReceived("Hello Paris", "Hello London", "Hello Dublin", "Hello Copenhagen");
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

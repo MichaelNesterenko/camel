@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -36,13 +37,12 @@ public class FileRenameReadLockMustUseMarkerFileTest extends ContextTestSupport 
         mock.expectedBodiesReceived("Bye World");
         mock.message(0).header(Exchange.FILE_NAME).isEqualTo("bye.txt");
 
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
         // start the route
         context.getRouteController().startRoute("foo");
 
-        assertMockEndpointsSatisfied();
-
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         assertTrue(oneExchangeDone.matchesWaitTime());
 
         // and lock file should be deleted

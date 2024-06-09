@@ -17,6 +17,7 @@
 package org.apache.camel.management;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -45,9 +46,9 @@ public class ManagedRouteSuspendAndResumeTest extends ManagementTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // should be started
         String state = (String) mbeanServer.getAttribute(on, "State");
@@ -64,7 +65,7 @@ public class ManagedRouteSuspendAndResumeTest extends ManagementTestSupport {
         // wait a little bit while route is stopped to verify that file was not consumed
         mock.setResultWaitTime(250);
 
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
         // route is stopped so we do not get the file
         mock.assertIsNotSatisfied();
@@ -80,7 +81,7 @@ public class ManagedRouteSuspendAndResumeTest extends ManagementTestSupport {
         assertEquals(ServiceStatus.Started.name(), state, "Should be started");
 
         // this time the file is consumed
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         ManagedSuspendableRouteMBean route
                 = context.getCamelContextExtension().getContextPlugin(ManagedCamelContext.class).getManagedRoute("foo",

@@ -24,8 +24,6 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.spi.Registry;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 /**
  * Unit test for expression option for file producer.
@@ -39,7 +37,6 @@ public class FileProducerExpressionTest extends ContextTestSupport {
         return jndi;
     }
 
-    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void testProducerFileNameHeaderNotEvaluated() {
         template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME,

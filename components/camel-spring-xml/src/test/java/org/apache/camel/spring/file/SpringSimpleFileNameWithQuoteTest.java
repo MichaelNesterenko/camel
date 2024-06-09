@@ -31,6 +31,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
+// TODO idk where context is loaded from
 @ContextConfiguration(initializers = TestDirectoryContextInitializer.class)
 public class SpringSimpleFileNameWithQuoteTest extends SpringRunWithTestSupport {
     protected String expectedBody = "Hello World!";
@@ -46,7 +47,7 @@ public class SpringSimpleFileNameWithQuoteTest extends SpringRunWithTestSupport 
         result.expectedBodiesReceived(expectedBody);
         result.expectedHeaderReceived("foo", "\"hello.txt\" abc");
 
-        template.sendBodyAndHeader(fileUri(tempDir, ""), expectedBody, Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri(tempDir, "")), expectedBody, Exchange.FILE_NAME, "hello.txt");
 
         result.assertIsSatisfied();
     }

@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FileConsumerDeleteExchangePooledTest extends ContextTestSupport {
 
@@ -55,13 +56,15 @@ public class FileConsumerDeleteExchangePooledTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
             assertEquals(1, ecc.getExchangeFactoryManager().getStatistics().getReleasedCounter());
         });
+
     }
 
     @Override

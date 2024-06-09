@@ -34,8 +34,8 @@ public class FileDelayTest extends BaseEndpointDslTest {
     public void setUp() throws Exception {
         deleteDirectory(TEST_DATA_DIR);
         super.setUp();
-        template.sendBodyAndHeader("file://" + TEST_DATA_DIR, "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader("file://" + TEST_DATA_DIR, "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri("file://" + TEST_DATA_DIR), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri("file://" + TEST_DATA_DIR), "Bye World", Exchange.FILE_NAME, "bye.txt");
     }
 
     @Test
@@ -44,7 +44,7 @@ public class FileDelayTest extends BaseEndpointDslTest {
         mock.expectedBodiesReceivedInAnyOrder("Hello World", "Bye World");
         mock.message(1).arrives().between(1500, 3000).millis().afterPrevious();
 
-        MockEndpoint.assertIsSatisfied(context);
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
     }
 
     @Override

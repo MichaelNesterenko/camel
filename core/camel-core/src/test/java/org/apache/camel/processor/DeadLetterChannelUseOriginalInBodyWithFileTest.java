@@ -16,6 +16,8 @@
  */
 package org.apache.camel.processor;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -35,9 +37,9 @@ public class DeadLetterChannelUseOriginalInBodyWithFileTest extends ContextTestS
         dead.message(0).body().isInstanceOf(GenericFile.class);
         dead.message(0).body(String.class).isEqualTo("Hello");
 
-        template.sendBodyAndHeader(fileUri(), "Hello", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

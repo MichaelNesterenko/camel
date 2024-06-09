@@ -42,7 +42,7 @@ public class ShutdownCompleteAllTasksTest extends ContextTestSupport {
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        String url = fileUri(FILE_URI_QUERY);
+        String url = sfpUri(fileUri(FILE_URI_QUERY));
         template.sendBodyAndHeader(url, "A", Exchange.FILE_NAME, "a.txt");
         template.sendBodyAndHeader(url, "B", Exchange.FILE_NAME, "b.txt");
         template.sendBodyAndHeader(url, "C", Exchange.FILE_NAME, "c.txt");

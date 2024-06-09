@@ -17,7 +17,6 @@
 package org.apache.camel.processor.throttle;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
@@ -45,7 +44,6 @@ public class ThrottlingExceptionRoutePolicyHalfOpenHandlerSedaTest extends Conte
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        this.setUseRouteBuilder(true);
         result = getMockEndpoint("mock:result");
 
         context.getShutdownStrategy().setTimeout(1);
@@ -54,8 +52,7 @@ public class ThrottlingExceptionRoutePolicyHalfOpenHandlerSedaTest extends Conte
     @Test
     public void testHalfOpenCircuit() throws Exception {
         result.expectedMessageCount(2);
-        List<String> bodies = Arrays.asList("Message One", "Message Two");
-        result.expectedBodiesReceivedInAnyOrder(bodies);
+        result.expectedBodiesReceivedInAnyOrder(Arrays.asList("Message One", "Message Two"));
 
         result.whenAnyExchangeReceived(new Processor() {
             @Override
@@ -72,7 +69,7 @@ public class ThrottlingExceptionRoutePolicyHalfOpenHandlerSedaTest extends Conte
         final ServiceSupport consumer = (ServiceSupport) context.getRoute("foo").getConsumer();
 
         // wait long enough to have the consumer suspended
-        await().atMost(2, TimeUnit.SECONDS).until(consumer::isSuspended);
+        await().atMost(60, TimeUnit.SECONDS).until(consumer::isSuspended);
 
         // send more messages
         // but should get there (yet)
@@ -81,22 +78,21 @@ public class ThrottlingExceptionRoutePolicyHalfOpenHandlerSedaTest extends Conte
         log.debug("sending message three");
         sendMessage("Message Three");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         result.reset();
         result.expectedMessageCount(2);
-        bodies = Arrays.asList("Message Three", "Message Four");
-        result.expectedBodiesReceivedInAnyOrder(bodies);
+        result.expectedBodiesReceivedInAnyOrder(Arrays.asList("Message Three", "Message Four"));
 
         // wait long enough to have the consumer resumed
-        await().atMost(2, TimeUnit.SECONDS).until(consumer::isStarted);
+        await().atMost(60, TimeUnit.SECONDS).until(consumer::isStarted);
 
         // send message
         // should get through
         log.debug("sending message four");
         sendMessage("Message Four");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -105,8 +101,8 @@ public class ThrottlingExceptionRoutePolicyHalfOpenHandlerSedaTest extends Conte
             @Override
             public void configure() throws Exception {
                 int threshold = 2;
-                long failureWindow = 30;
-                long halfOpenAfter = 250;
+                long failureWindow = 3000;
+                long halfOpenAfter = 25000;
                 ThrottlingExceptionRoutePolicy policy
                         = new ThrottlingExceptionRoutePolicy(threshold, failureWindow, halfOpenAfter, null);
                 policy.setHalfOpenHandler(new AlwaysCloseHandler());

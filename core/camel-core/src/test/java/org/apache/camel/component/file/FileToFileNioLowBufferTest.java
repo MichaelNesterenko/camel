@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -31,9 +33,9 @@ public class FileToFileNioLowBufferTest extends ContextTestSupport {
         mock.expectedMessageCount(1);
         mock.expectedFileExists(testFile("out/hello.txt"), body);
 
-        template.sendBodyAndHeader(fileUri("in"), body, Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("in")), body, Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

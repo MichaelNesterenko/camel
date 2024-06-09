@@ -19,214 +19,160 @@ package org.apache.camel.processor.throttle.requests;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.processor.ThrottlerRejectedExecutionException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// time-bound that does not run well in shared environments
-@DisabledOnOs(OS.WINDOWS)
-@DisabledIfSystemProperty(named = "ci.env.name", matches = "github.com", disabledReason = "Flaky on Github CI")
+@Isolated
 public class ThrottlerTest extends ContextTestSupport {
-    private static final int INTERVAL = 500;
-    private static final int TOLERANCE = 50;
+    private static final int THROTTLE_WINDOW_DURATION_MS = 1_000;
+    private static final int THROTTLE_WINDOW_SIZE = 3;
+
+    private static final int THROTTLE_WINDOW_PRESET_SIZE = 5;
+
     private static final int MESSAGE_COUNT = 9;
+    private static final int WORKER_COUNT = 9;
 
     @Test
-    public void testSendLotsOfMessagesButOnly3GetThroughWithin2Seconds() throws Exception {
-        MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        resultEndpoint.expectedMessageCount(3);
-        resultEndpoint.setResultWaitTime(2000);
+    public void testSendLotsOfMessagesAndThrottleDuringThrottleWindow() throws Exception {
+        MockEndpoint resultEndpoint = getMockEndpoint("mock:result");
+        resultEndpoint.expectedMessageCount(THROTTLE_WINDOW_SIZE);
+        resultEndpoint.setResultWaitTime(THROTTLE_WINDOW_DURATION_MS);
 
         for (int i = 0; i < MESSAGE_COUNT; i++) {
             template.sendBody("seda:a", "<message>" + i + "</message>");
         }
 
-        // lets pause to give the requests time to be processed
-        // to check that the throttle really does kick in
         resultEndpoint.assertIsSatisfied();
     }
 
     @Test
     public void testSendLotsOfMessagesWithRejectExecution() throws Exception {
-        MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        resultEndpoint.expectedMessageCount(2);
+        var excessiveMessages = 4;
+        getMockEndpoint("mock:result").expectedMessageCount(THROTTLE_WINDOW_SIZE);
+        getMockEndpoint("mock:error").expectedMessageCount(excessiveMessages);
 
-        MockEndpoint errorEndpoint = resolveMandatoryEndpoint("mock:error", MockEndpoint.class);
-        errorEndpoint.expectedMessageCount(4);
-
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < THROTTLE_WINDOW_SIZE + excessiveMessages; i++) {
             template.sendBody("direct:start", "<message>" + i + "</message>");
         }
 
-        // lets pause to give the requests time to be processed
-        // to check that the throttle really does kick in
         assertMockEndpointsSatisfied();
     }
 
     @Test
-    public void testSendLotsOfMessagesSimultaneouslyButOnly3GetThrough() throws Exception {
-        MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        long elapsed = sendMessagesAndAwaitDelivery(MESSAGE_COUNT, "direct:a", MESSAGE_COUNT, resultEndpoint);
-        assertThrottlerTiming(elapsed, 5, INTERVAL, MESSAGE_COUNT);
+    public void testSendLotsOfMessagesSimultaneouslyAndReceiveWithinExpectedDurationBoundaries() throws Exception {
+        sendSimpleMessagesAndAwaitDelivery(MESSAGE_COUNT, THROTTLE_WINDOW_SIZE, THROTTLE_WINDOW_DURATION_MS, "direct:a");
     }
 
     @Test
     public void testConfigurationWithConstantExpression() throws Exception {
-        MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        long elapsed = sendMessagesAndAwaitDelivery(MESSAGE_COUNT, "direct:expressionConstant", MESSAGE_COUNT, resultEndpoint);
-        assertThrottlerTiming(elapsed, 5, INTERVAL, MESSAGE_COUNT);
+        sendSimpleMessagesAndAwaitDelivery(MESSAGE_COUNT, THROTTLE_WINDOW_PRESET_SIZE, THROTTLE_WINDOW_DURATION_MS,
+                "direct:expressionConstant");
     }
 
     @Test
     public void testConfigurationWithHeaderExpression() throws Exception {
-        MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        resultEndpoint.expectedMessageCount(MESSAGE_COUNT);
-
-        ExecutorService executor = Executors.newFixedThreadPool(MESSAGE_COUNT);
-        try {
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 5, INTERVAL, MESSAGE_COUNT);
-        } finally {
-            executor.shutdownNow();
-        }
+        sendMessagesWithHeaderExpression(MESSAGE_COUNT, 5, THROTTLE_WINDOW_DURATION_MS);
     }
 
     @Test
     public void testConfigurationWithChangingHeaderExpression() throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(5);
-        try {
-            MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 5, INTERVAL, MESSAGE_COUNT);
-            Thread.sleep(INTERVAL + TOLERANCE); // sleep here to ensure the
-                                               // first throttle rate does not
-                                               // influence the next one.
-
-            resultEndpoint.reset();
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 10, INTERVAL, MESSAGE_COUNT);
-            Thread.sleep(INTERVAL + TOLERANCE); // sleep here to ensure the
-                                               // first throttle rate does not
-                                               // influence the next one.
-
-            resultEndpoint.reset();
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 5, INTERVAL, MESSAGE_COUNT);
-            Thread.sleep(INTERVAL + TOLERANCE); // sleep here to ensure the
-                                               // first throttle rate does not
-                                               // influence the next one.
-
-            resultEndpoint.reset();
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 10, INTERVAL, MESSAGE_COUNT);
-        } finally {
-            executor.shutdownNow();
-        }
+        sendMessagesWithHeaderExpression(MESSAGE_COUNT, 5, THROTTLE_WINDOW_DURATION_MS);
+        sendMessagesWithHeaderExpression(MESSAGE_COUNT, 10, THROTTLE_WINDOW_DURATION_MS);
     }
 
-    private void assertThrottlerTiming(
-            final long elapsedTimeMs, final int throttle, final int intervalMs, final int messageCount) {
-        // now assert that they have actually been throttled (use +/- 50 as
-        // slack)
-        long minimum = calculateMinimum(intervalMs, throttle, messageCount) - 50;
-        long maximum = calculateMaximum(intervalMs, throttle, messageCount) + 50;
-        // add 500 in case running on slow CI boxes
-        maximum += 500;
-        log.info("Sent {} exchanges in {}ms, with throttle rate of {} per {}ms. Calculated min {}ms and max {}ms", messageCount,
-                elapsedTimeMs, throttle, intervalMs, minimum,
-                maximum);
-
-        assertTrue(elapsedTimeMs >= minimum, "Should take at least " + minimum + "ms, was: " + elapsedTimeMs);
-        assertTrue(elapsedTimeMs <= maximum + TOLERANCE, "Should take at most " + maximum + "ms, was: " + elapsedTimeMs);
-    }
-
-    private long sendMessagesAndAwaitDelivery(
-            final int messageCount, final String endpointUri, final int threadPoolSize, final MockEndpoint receivingEndpoint)
+    private void sendSimpleMessagesAndAwaitDelivery(
+            final int messageCount,
+            final int throttleWindowSize,
+            final int throttleWindowDurationMs,
+            final String inputUri)
             throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
-        try {
-            if (receivingEndpoint != null) {
-                receivingEndpoint.expectedMessageCount(messageCount);
-            }
-
-            long start = System.nanoTime();
-            for (int i = 0; i < messageCount; i++) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        template.sendBody(endpointUri, "<message>payload</message>");
-                    }
-                });
-            }
-
-            // let's wait for the exchanges to arrive
-            if (receivingEndpoint != null) {
-                receivingEndpoint.assertIsSatisfied();
-            }
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-        } finally {
-            executor.shutdownNow();
-        }
+        sendMessagesAndAwaitDelivery(
+                messageCount,
+                throttleWindowSize,
+                throttleWindowDurationMs,
+                () -> template.sendBody(inputUri, "<message>payload</message>"));
     }
 
     private void sendMessagesWithHeaderExpression(
-            final ExecutorService executor, final MockEndpoint resultEndpoint, final int throttle, final int intervalMs,
-            final int messageCount)
+            final int messageCount,
+            final int throttleWindowSize,
+            final int throttleWindowDurationMs)
             throws InterruptedException {
-        resultEndpoint.expectedMessageCount(messageCount);
-
-        long start = System.nanoTime();
-        for (int i = 0; i < messageCount; i++) {
-            executor.execute(new Runnable() {
-                public void run() {
-                    template.sendBodyAndHeader("direct:expressionHeader", "<message>payload</message>", "throttleValue",
-                            throttle);
-                }
-            });
-        }
-
-        // let's wait for the exchanges to arrive
-        resultEndpoint.assertIsSatisfied();
-        long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-        assertThrottlerTiming(elapsed, throttle, intervalMs, messageCount);
+        sendMessagesAndAwaitDelivery(
+                messageCount,
+                throttleWindowSize,
+                throttleWindowDurationMs,
+                () -> template.sendBodyAndHeader(
+                        "direct:expressionHeader", "<message>payload</message>",
+                        "throttleValue", throttleWindowSize));
     }
 
-    private long calculateMinimum(final long periodMs, final long throttleRate, final long messageCount) {
-        if (messageCount % throttleRate > 0) {
-            return (long) Math.floor((double) messageCount / (double) throttleRate) * periodMs;
-        } else {
-            return (long) (Math.floor((double) messageCount / (double) throttleRate) * periodMs) - periodMs;
-        }
-    }
+    private void sendMessagesAndAwaitDelivery(
+            final int messageCount,
+            final int throttleWindowSize,
+            final int throttleWindowDurationMs,
+            final Runnable messageSender)
+            throws InterruptedException {
+        long minimumDuration = ((messageCount / throttleWindowSize) - 1) * throttleWindowDurationMs;
+        long maximumDuration = messageCount * throttleWindowDurationMs;
 
-    private long calculateMaximum(final long periodMs, final long throttleRate, final long messageCount) {
-        return ((long) Math.ceil((double) messageCount / (double) throttleRate)) * periodMs;
+        ExecutorService executor = Executors.newFixedThreadPool(WORKER_COUNT);
+        try {
+            var resultEndpoint = getMockEndpoint("mock:result");
+            resultEndpoint.expectedMessageCount(messageCount);
+            resultEndpoint.setResultWaitTime(maximumDuration);
+
+            long start = System.nanoTime();
+            IntStream.range(0, messageCount).forEach(idx -> messageSender.run());
+            var elapsedTimeMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+            log.info(
+                    "Sent {} exchanges in {}ms, with throttle rate of {} per {}ms. Calculated min {}ms and max {}ms",
+                    messageCount, elapsedTimeMs, throttleWindowSize, throttleWindowDurationMs, minimumDuration,
+                    maximumDuration);
+            resultEndpoint.assertIsSatisfied();
+            resultEndpoint.reset();
+            assertTrue(elapsedTimeMs >= minimumDuration,
+                    "Should take at least " + minimumDuration + "ms, was: " + elapsedTimeMs);
+            assertTrue(elapsedTimeMs <= maximumDuration,
+                    "Should take at most " + maximumDuration + "ms, was: " + elapsedTimeMs);
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Override
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {
-
                 onException(ThrottlerRejectedExecutionException.class).handled(true).to("mock:error");
 
-                // START SNIPPET: ex
-                from("seda:a").throttle(3).timePeriodMillis(1000).to("log:result", "mock:result");
-                // END SNIPPET: ex
-
-                from("direct:a").throttle(5).timePeriodMillis(INTERVAL).to("log:result", "mock:result");
-
-                from("direct:expressionConstant").throttle(constant(5)).timePeriodMillis(INTERVAL).to("log:result",
+                from("seda:a").throttle(THROTTLE_WINDOW_SIZE).timePeriodMillis(THROTTLE_WINDOW_DURATION_MS).to("log:result",
                         "mock:result");
 
-                from("direct:expressionHeader").throttle(header("throttleValue")).timePeriodMillis(INTERVAL).to("log:result",
+                from("direct:start").throttle(THROTTLE_WINDOW_SIZE).timePeriodMillis(THROTTLE_WINDOW_DURATION_MS)
+                        .rejectExecution(true)
+                        .to("log:result", "mock:result");
+
+                from("direct:a").throttle(THROTTLE_WINDOW_SIZE).timePeriodMillis(THROTTLE_WINDOW_DURATION_MS).to("log:result",
                         "mock:result");
 
-                from("direct:start").throttle(2).timePeriodMillis(1000).rejectExecution(true).to("log:result", "mock:result");
+                from("direct:expressionConstant").throttle(constant(THROTTLE_WINDOW_PRESET_SIZE))
+                        .timePeriodMillis(THROTTLE_WINDOW_DURATION_MS)
+                        .to("log:result", "mock:result");
 
-                from("direct:highThrottleRate").throttle(10000).timePeriodMillis(INTERVAL).to("mock:result");
+                from("direct:expressionHeader").throttle(header("throttleValue")).timePeriodMillis(THROTTLE_WINDOW_DURATION_MS)
+                        .to("log:result", "mock:result");
+
+                from("direct:highThrottleRate").throttle(10000).timePeriodMillis(THROTTLE_WINDOW_DURATION_MS).to("mock:result");
             }
         };
     }

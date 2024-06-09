@@ -37,14 +37,14 @@ public class LanguageLoadScriptFromFileCachedTest extends ContextTestSupport {
     @Test
     public void testLanguage() throws Exception {
         // create script to start with
-        template.sendBodyAndHeader(fileUri(), "Hello ${body}", Exchange.FILE_NAME, "myscript.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello ${body}", Exchange.FILE_NAME, "myscript.txt");
 
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World", "Hello World");
 
         template.sendBody("direct:start", "World");
 
         // even if we update the file the content is cached
-        template.sendBodyAndHeader(fileUri(), "Bye ${body}", Exchange.FILE_NAME, "myscript.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye ${body}", Exchange.FILE_NAME, "myscript.txt");
         template.sendBody("direct:start", "World");
 
         assertMockEndpointsSatisfied();
@@ -53,14 +53,14 @@ public class LanguageLoadScriptFromFileCachedTest extends ContextTestSupport {
     @Test
     public void testClearCachedScriptViaJmx() throws Exception {
         // create script to start with
-        template.sendBodyAndHeader(fileUri(), "Hello ${body}", Exchange.FILE_NAME, "myscript.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello ${body}", Exchange.FILE_NAME, "myscript.txt");
 
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World", "Hello World", "Bye World");
 
         template.sendBody("direct:start", "World");
 
         // even if we update the file the content is cached
-        template.sendBodyAndHeader(fileUri(), "Bye ${body}", Exchange.FILE_NAME, "myscript.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye ${body}", Exchange.FILE_NAME, "myscript.txt");
         template.sendBody("direct:start", "World");
 
         // now clear the cache via the mbean server

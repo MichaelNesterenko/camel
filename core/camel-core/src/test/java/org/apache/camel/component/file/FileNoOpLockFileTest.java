@@ -26,8 +26,8 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test to verify that the noop file strategy usage of lock files.
@@ -39,14 +39,10 @@ public class FileNoOpLockFileTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:report");
         mock.expectedBodiesReceived("Hello Locked");
 
-        template.sendBodyAndHeader(fileUri("locked"), "Hello Locked", Exchange.FILE_NAME, "report.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("locked")), "Hello Locked", Exchange.FILE_NAME, "report.txt");
 
-        mock.assertIsSatisfied();
-
-        // sleep to let file consumer do its unlocking
-        await().atMost(1, TimeUnit.SECONDS).until(() -> existsLockFile(false));
-
-        // should be deleted after processing
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
         checkLockFile(false);
     }
 
@@ -57,18 +53,9 @@ public class FileNoOpLockFileTest extends ContextTestSupport {
 
         template.sendBodyAndHeader(fileUri("notlocked"), "Hello Not Locked", Exchange.FILE_NAME, "report.txt");
 
-        mock.assertIsSatisfied();
-
-        // sleep to let file consumer do its unlocking
-        await().atMost(1, TimeUnit.SECONDS).until(() -> existsLockFile(false));
-
-        // no lock files should exists after processing
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
         checkLockFile(false);
-    }
-
-    private boolean existsLockFile(boolean expected) {
-        String filename = (expected ? "locked/" : "notlocked/") + "report.txt" + FileComponent.DEFAULT_LOCK_FILE_POSTFIX;
-        return expected == Files.exists(testFile(filename));
     }
 
     private void checkLockFile(boolean expected) {

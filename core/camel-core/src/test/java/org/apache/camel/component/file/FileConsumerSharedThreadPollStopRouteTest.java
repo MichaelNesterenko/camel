@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
@@ -33,10 +35,10 @@ public class FileConsumerSharedThreadPollStopRouteTest extends FileConsumerShare
         // thread thread name should be the same
         mock.message(0).header("threadName").isEqualTo(mock.message(1).header("threadName"));
 
-        template.sendBodyAndHeader(fileUri("a"), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri("b"), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("a")), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("b")), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // now stop a
         context.getRouteController().stopRoute("a");
@@ -46,17 +48,17 @@ public class FileConsumerSharedThreadPollStopRouteTest extends FileConsumerShare
         // a should not be polled
         mock.expectedFileExists(testFile("a/hello2.txt"));
 
-        template.sendBodyAndHeader(fileUri("a"), "Hello World 2", Exchange.FILE_NAME, "hello2.txt");
-        template.sendBodyAndHeader(fileUri("b"), "Bye World 2", Exchange.FILE_NAME, "bye2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("a")), "Hello World 2", Exchange.FILE_NAME, "hello2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("b")), "Bye World 2", Exchange.FILE_NAME, "bye2.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // now start a, which should pickup the file
         resetMocks();
         mock.expectedBodiesReceived("Hello World 2");
         context.getRouteController().startRoute("a");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

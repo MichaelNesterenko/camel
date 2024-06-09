@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -32,11 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class FileConsumeAlterFileNameHeaderIssueTest extends ContextTestSupport {
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
-
     @Test
     public void testConsumeAndDeleteRemoveAllHeaders() throws Exception {
         context.addRoutes(new RouteBuilder() {
@@ -47,15 +43,14 @@ public class FileConsumeAlterFileNameHeaderIssueTest extends ContextTestSupport 
                         .removeHeaders("*").to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         assertFalse(mock.getExchanges().get(0).getIn().hasHeaders(), "Headers should have been removed");
 
@@ -75,16 +70,15 @@ public class FileConsumeAlterFileNameHeaderIssueTest extends ContextTestSupport 
                         .setHeader(Exchange.FILE_NAME, constant("bye.txt")).to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
         mock.expectedHeaderReceived(Exchange.FILE_NAME, "bye.txt");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // the original file should have been deleted, as the file consumer
         // should be resilient against
@@ -102,15 +96,14 @@ public class FileConsumeAlterFileNameHeaderIssueTest extends ContextTestSupport 
                         .removeHeaders("*").to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         assertFalse(mock.getExchanges().get(0).getIn().hasHeaders(), "Headers should have been removed");
 

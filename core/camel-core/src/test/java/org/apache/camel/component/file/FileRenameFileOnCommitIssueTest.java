@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
@@ -32,10 +34,10 @@ public class FileRenameFileOnCommitIssueTest extends ContextTestSupport {
         mock.expectedMessageCount(1);
         mock.expectedFileExists(testFile("renameissue/.camel/hello.txt"));
 
-        template.sendBodyAndHeader(fileUri("renameissue"), "World",
+        template.sendBodyAndHeader(sfpUri(fileUri("renameissue")), "World",
                 Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

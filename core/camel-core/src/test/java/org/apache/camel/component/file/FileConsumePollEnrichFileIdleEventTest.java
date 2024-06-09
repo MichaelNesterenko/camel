@@ -16,16 +16,18 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class FileConsumePollEnrichFileIdleEventTest extends ContextTestSupport {
+
+    final CountDownLatch enrichDataLatch = new CountDownLatch(1);
 
     @Test
     public void testNonEmptyAfterEmpty() throws Exception {
@@ -37,20 +39,15 @@ public class FileConsumePollEnrichFileIdleEventTest extends ContextTestSupport {
         mock.expectedFileExists(testFile("enrich/.done/Event2.txt"));
         mock.expectedFileExists(testFile("enrichdata/.done/AAA.dat"));
 
-        template.sendBodyAndHeader(fileUri("enrich"), "Event1", Exchange.FILE_NAME,
-                "Event1.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrich")), "Event1", Exchange.FILE_NAME, "Event1.txt");
 
-        log.info("Sleeping for 1 sec before writing enrichdata file");
+        // needs to be with a delay to trigger an empty message
+        enrichDataLatch.await(60, TimeUnit.SECONDS);
+        template.sendBodyAndHeader(sfpUri(fileUri("enrichdata")), "EnrichData", Exchange.FILE_NAME, "AAA.dat");
+        // Trigger second event which should find the EnrichData file
+        template.sendBodyAndHeader(sfpUri(fileUri("enrich")), "Event2", Exchange.FILE_NAME, "Event2.txt");
 
-        Awaitility.await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> {
-            template.sendBodyAndHeader(fileUri("enrichdata"), "EnrichData",
-                    Exchange.FILE_NAME, "AAA.dat");
-            // Trigger second event which should find the EnrichData file
-            template.sendBodyAndHeader(fileUri("enrich"), "Event2", Exchange.FILE_NAME,
-                    "Event2.txt");
-            log.info("... write done");
-            assertMockEndpointsSatisfied();
-        });
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -61,10 +58,9 @@ public class FileConsumePollEnrichFileIdleEventTest extends ContextTestSupport {
         mock.expectedBodiesReceived("Event1");
         mock.expectedFileExists(testFile("enrich/.done/Event1.txt"));
 
-        template.sendBodyAndHeader(fileUri("enrich"), "Event1", Exchange.FILE_NAME,
-                "Event1.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrich")), "Event1", Exchange.FILE_NAME, "Event1.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -76,6 +72,7 @@ public class FileConsumePollEnrichFileIdleEventTest extends ContextTestSupport {
                         .to("mock:start")
                         .pollEnrich(
                                 fileUri("enrichdata?initialDelay=0&delay=10&move=.done&sendEmptyMessageWhenIdle=true"), 1000)
+                        .process(e -> enrichDataLatch.countDown())
                         .to("mock:result");
             }
         };

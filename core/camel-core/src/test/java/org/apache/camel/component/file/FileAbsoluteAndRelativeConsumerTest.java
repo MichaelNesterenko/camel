@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -34,9 +35,9 @@ public class FileAbsoluteAndRelativeConsumerTest extends ContextTestSupport {
         mock.message(0).header(Exchange.FILE_NAME).isEqualTo("test" + File.separator + "hello.txt");
         mock.message(0).header(Exchange.FILE_NAME_ONLY).isEqualTo("hello.txt");
 
-        template.sendBodyAndHeader(fileUri("filerelative"), "Hello World", Exchange.FILE_NAME, "test/hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("filerelative")), "Hello World", Exchange.FILE_NAME, "test/hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -47,9 +48,9 @@ public class FileAbsoluteAndRelativeConsumerTest extends ContextTestSupport {
         mock.message(0).header(Exchange.FILE_NAME).isEqualTo("test" + File.separator + "hello.txt");
         mock.message(0).header(Exchange.FILE_NAME_ONLY).isEqualTo("hello.txt");
 
-        template.sendBodyAndHeader(fileUri("fileabsolute"), "Hello World", Exchange.FILE_NAME, "test/hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("fileabsolute")), "Hello World", Exchange.FILE_NAME, "test/hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

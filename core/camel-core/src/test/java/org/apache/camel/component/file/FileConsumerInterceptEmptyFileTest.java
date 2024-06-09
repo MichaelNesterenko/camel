@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -37,14 +39,14 @@ public class FileConsumerInterceptEmptyFileTest extends ContextTestSupport {
 
         sendFiles();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     private void sendFiles() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.xml");
-        template.sendBodyAndHeader(fileUri(), "", Exchange.FILE_NAME, "empty1.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "secret.txt");
-        template.sendBodyAndHeader(fileUri(), "", Exchange.FILE_NAME, "empty2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "", Exchange.FILE_NAME, "empty1.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "secret.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "", Exchange.FILE_NAME, "empty2.txt");
     }
 
     @Override

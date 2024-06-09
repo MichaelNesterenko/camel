@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.validator;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.ValidationException;
@@ -41,11 +43,11 @@ public class FileValidatorRouteTest extends ContextTestSupport {
         validEndpoint.expectedMessageCount(1);
         finallyEndpoint.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(),
+        template.sendBodyAndHeader(sfpUri(fileUri()),
                 "<mail xmlns='http://foo.com/bar'><subject>Hey</subject><body>Hello world!</body></mail>", Exchange.FILE_NAME,
                 "valid.xml");
 
-        MockEndpoint.assertIsSatisfied(validEndpoint, invalidEndpoint, finallyEndpoint);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // should be able to delete the file
         oneExchangeDone.matchesWaitTime();
@@ -58,10 +60,10 @@ public class FileValidatorRouteTest extends ContextTestSupport {
         invalidEndpoint.expectedMessageCount(1);
         finallyEndpoint.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(),
+        template.sendBodyAndHeader(sfpUri(fileUri()),
                 "<mail xmlns='http://foo.com/bar'><body>Hello world!</body></mail>", Exchange.FILE_NAME, "invalid.xml");
 
-        MockEndpoint.assertIsSatisfied(validEndpoint, invalidEndpoint, finallyEndpoint);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // should be able to delete the file
         oneExchangeDone.matchesWaitTime();

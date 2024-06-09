@@ -24,6 +24,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class FileConsumerIdempotentKeyChangedIssueTest extends ContextTestSupport {
 
     private Endpoint endpoint;
@@ -36,15 +38,15 @@ public class FileConsumerIdempotentKeyChangedIssueTest extends ContextTestSuppor
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matches(5, TimeUnit.SECONDS);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         resetMocks();
         getMockEndpoint("mock:file").expectedBodiesReceived("Hello World Again");
 
         template.sendBodyAndHeader(endpoint, "Hello World Again", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -53,8 +55,8 @@ public class FileConsumerIdempotentKeyChangedIssueTest extends ContextTestSuppor
             @Override
             public void configure() throws Exception {
                 endpoint = endpoint(
-                        fileUri("?noop=true&readLock=changed&initialDelay=0&delay=10&readLockCheckInterval=100"
-                                + "&idempotentKey=${file:onlyname}-${file:size}-${date:file:yyyyMMddHHmmss}"));
+                        sfpUri(fileUri("?noop=true&readLock=changed&initialDelay=0&delay=10&readLockCheckInterval=100"
+                                       + "&idempotentKey=${file:onlyname}-${file:size}-${date:file:yyyyMMddHHmmss}")));
 
                 from(endpoint).noAutoStartup().convertBodyTo(String.class).to("log:file").to("mock:file");
             }

@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -30,9 +32,9 @@ public class FileProducerFileExistOverrideNoFileBeforeTest extends ContextTestSu
         mock.expectedBodiesReceived("Bye World");
         mock.expectedFileExists(testFile("hello.txt"), "Bye World");
 
-        template.sendBodyAndHeader(fileUri("?fileExist=Override"), "Bye World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("?fileExist=Override")), "Bye World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

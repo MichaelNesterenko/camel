@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.io.FileWriter;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -26,6 +27,7 @@ import org.apache.camel.converter.IOConverter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for the FileRenameStrategy using move options
@@ -38,10 +40,9 @@ public class FileConsumerCommitRenameStrategyTest extends ContextTestSupport {
         mock.expectedBodiesReceived("Hello Paris");
         mock.expectedFileExists(testFile("done/paris.txt"), "Hello Paris");
 
-        template.sendBodyAndHeader(fileUri("reports"), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("reports")), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
 
-        // wait a bit to give the filesystem time to complete the operation before checking the result
-        mock.assertIsSatisfied(1000L);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -57,11 +58,10 @@ public class FileConsumerCommitRenameStrategyTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:report");
         mock.expectedBodiesReceived("Hello London");
 
-        template.sendBodyAndHeader(fileUri("reports"), "Hello London", Exchange.FILE_NAME, "london.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("reports")), "Hello London", Exchange.FILE_NAME, "london.txt");
 
-        mock.assertIsSatisfied();
-
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // content of file should be Hello London
         String content = IOConverter.toString(testFile("done/london.txt").toFile(), null);

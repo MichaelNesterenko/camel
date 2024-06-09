@@ -51,7 +51,7 @@ public class FileConsumerIdempotentTest extends ContextTestSupport {
     @Test
     public void testIdempotent() throws Exception {
         // send a file
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "report.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "report.txt");
 
         // consume the file the first time
         MockEndpoint mock = getMockEndpoint("mock:result");

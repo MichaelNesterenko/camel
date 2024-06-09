@@ -58,14 +58,13 @@ public class FileConsumerPollStrategyNotBeginTest extends ContextTestSupport {
 
     @Test
     public void testFirstPollNotBegin() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        assertMockEndpointsSatisfied();
-
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // the poll strategy commit is executed after the exchange is done
         Awaitility.await().pollDelay(100, TimeUnit.MILLISECONDS)

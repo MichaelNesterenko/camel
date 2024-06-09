@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -32,10 +34,11 @@ public class FilerConsumerRetryDoneFileNameTest extends ContextTestSupport {
         getMockEndpoint("mock:input").expectedMessageCount(2);
         getMockEndpoint("mock:input").expectedFileExists(testFile(".camel/hello.txt"));
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "", Exchange.FILE_NAME, "done");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "", Exchange.FILE_NAME, "done");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        oneExchangeDone.matchesWaitTime();
 
         // done file should be deleted now
         assertFileNotExists(testFile("done"));

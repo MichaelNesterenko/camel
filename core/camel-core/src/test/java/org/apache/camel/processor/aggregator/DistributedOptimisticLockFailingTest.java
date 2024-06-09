@@ -34,6 +34,7 @@ import org.apache.camel.processor.BodyInAggregatingStrategy;
 import org.apache.camel.processor.aggregate.MemoryAggregationRepository;
 import org.apache.camel.processor.aggregate.OptimisticLockRetryPolicy;
 import org.apache.camel.spi.OptimisticLockingAggregationRepository;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,8 +58,7 @@ public class DistributedOptimisticLockFailingTest extends AbstractDistributedTes
 
         @Override
         public Exchange add(CamelContext camelContext, String key, Exchange oldExchange, Exchange newExchange) {
-            int count = counter.incrementAndGet();
-            if (count % 2 == 0) {
+            if (counter.incrementAndGet() % 2 == 0) {
                 throw new OptimisticLockingException();
             } else {
                 return super.add(camelContext, key, oldExchange, newExchange);
@@ -70,10 +70,8 @@ public class DistributedOptimisticLockFailingTest extends AbstractDistributedTes
 
     @Test
     public void testAlwaysFails() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedMessageCount(0);
-        MockEndpoint mock2 = getMockEndpoint2("mock:result");
-        mock2.expectedMessageCount(0);
+        getMockEndpoint("mock:result").expectedMessageCount(0);
+        getMockEndpoint2("mock:result").expectedMessageCount(0);
 
         try {
             template.sendBodyAndHeader("direct:fails", "hello world", "id", 1);
@@ -93,8 +91,7 @@ public class DistributedOptimisticLockFailingTest extends AbstractDistributedTes
                     e.getCause().getCause());
         }
 
-        mock.assertIsSatisfied();
-        mock2.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -118,18 +115,14 @@ public class DistributedOptimisticLockFailingTest extends AbstractDistributedTes
             });
         }
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        MockEndpoint mock2 = getMockEndpoint2("mock:result");
-
         // submit all tasks
         service.invokeAll(tasks);
         service.shutdown();
         service.awaitTermination(10, TimeUnit.SECONDS);
 
-        int contextCount = mock.getReceivedCounter();
-        int context2Count = mock2.getReceivedCounter();
-
-        assertEquals(25, contextCount + context2Count);
+        MockEndpoint mock = getMockEndpoint("mock:result");
+        MockEndpoint mock2 = getMockEndpoint2("mock:result");
+        Awaitility.await().untilAsserted(() -> assertEquals(25, mock.getReceivedCounter() + mock2.getReceivedCounter()));
     }
 
     @Override

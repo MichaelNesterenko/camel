@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -33,24 +32,23 @@ public class FilerConsumerDualDoneFileNameTest extends ContextTestSupport {
     public void testTwoDoneFile() throws Exception {
         getMockEndpoint("mock:result").expectedBodiesReceivedInAnyOrder("Hello World", "Bye World");
 
-        template.sendBodyAndHeader(fileUri("?doneFileName=${file:name}.ready"), "Hello World", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(fileUri("?doneFileName=${file:name}.ready")), "Hello World", Exchange.FILE_NAME,
                 "hello.txt");
-        template.sendBodyAndHeader(fileUri("?doneFileName=${file:name}.ready"), "Bye World", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(fileUri("?doneFileName=${file:name}.ready")), "Bye World", Exchange.FILE_NAME,
                 "bye.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testOneDoneFileMissing() throws Exception {
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri("?doneFileName=${file:name}.ready"), "Hello World", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(fileUri("?doneFileName=${file:name}.ready")), "Hello World", Exchange.FILE_NAME,
                 "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
-        // give chance to poll 2nd file but it lacks the done file
-        Awaitility.await().pollDelay(250, TimeUnit.MILLISECONDS).untilAsserted(() -> assertMockEndpointsSatisfied());
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

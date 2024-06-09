@@ -45,7 +45,7 @@ public class SplitGroupWrappedMultiXmlTokenTest extends CamelTestSupport {
                 "<?xml version=\"1.0\"?>\n<orders xmlns=\"http:acme.com\">\n  <order id=\"5\">Groovy in Action</order></orders>");
 
         String body = createBody();
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory), body, Exchange.FILE_NAME, "orders.xml");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)), body, Exchange.FILE_NAME, "orders.xml");
 
         MockEndpoint.assertIsSatisfied(context);
     }

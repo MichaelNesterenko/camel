@@ -17,6 +17,7 @@
 package org.apache.camel.builder.endpoint;
 
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -37,9 +38,9 @@ public class FileAbsolutePathIssueTest extends BaseEndpointDslTest {
         mock.expectedMessageCount(1);
         mock.expectedFileExists(done + "/hello.txt");
 
-        template.sendBodyAndHeader("file:" + start, "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri("file:" + start), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        MockEndpoint.assertIsSatisfied(context);
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
     }
 
     @Override

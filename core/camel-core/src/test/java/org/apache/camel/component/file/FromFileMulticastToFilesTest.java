@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -29,15 +31,22 @@ public class FromFileMulticastToFilesTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from(fileUri("?initialDelay=0&delay=10")).multicast().pipeline()
-                        .transform(body().prepend("HEADER:"))
-                        .to(fileUri("out/?fileName=header.txt")).to("mock:header").end().pipeline()
-                        .transform(body().prepend("FOOTER:"))
-                        .to(fileUri("out/?fileName=footer.txt")).to("mock:footer").end().end()
-                        .to("mock:end");
+                from(fileUri("?initialDelay=0&delay=10&idempotent=true"))
+                    .multicast()
+                        .pipeline()
+                            .transform(body().prepend("HEADER:"))
+                            .to(sfpUri(fileUri("out/?fileName=header.txt")))
+                            .to("mock:header")
+                            .end()
+                        .pipeline()
+                            .transform(body().prepend("FOOTER:"))
+                            .to(sfpUri(fileUri("out/?fileName=footer.txt")))
+                            .to("mock:footer")
+                            .end()
+                    .end()
+                    .to("mock:end");
             }
         });
-        context.start();
 
         MockEndpoint header = getMockEndpoint("mock:header");
         header.expectedBodiesReceived("HEADER:foo");
@@ -51,9 +60,9 @@ public class FromFileMulticastToFilesTest extends ContextTestSupport {
         end.expectedMessageCount(1);
         end.expectedFileExists(testFile(".camel/foo.txt"));
 
-        template.sendBodyAndHeader(fileUri(), "foo", Exchange.FILE_NAME, "foo.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "foo", Exchange.FILE_NAME, "foo.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -61,15 +70,22 @@ public class FromFileMulticastToFilesTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from(fileUri("?initialDelay=0&delay=10")).multicast().parallelProcessing().pipeline()
-                        .transform(body().prepend("HEADER:"))
-                        .to(fileUri("out/?fileName=header.txt")).to("mock:header").end().pipeline()
-                        .transform(body().prepend("FOOTER:"))
-                        .to(fileUri("out/?fileName=footer.txt")).to("mock:footer").end().end()
-                        .to("mock:end");
+                from(fileUri("?initialDelay=0&delay=10&idempotent=true"))
+                    .multicast().parallelProcessing()
+                        .pipeline()
+                            .transform(body().prepend("HEADER:"))
+                            .to(sfpUri(fileUri("out/?fileName=header.txt")))
+                            .to("mock:header")
+                            .end()
+                        .pipeline()
+                            .transform(body().prepend("FOOTER:"))
+                            .to(sfpUri(fileUri("out/?fileName=footer.txt")))
+                            .to("mock:footer")
+                        .end()
+                    .end()
+                    .to("mock:end");
             }
         });
-        context.start();
 
         MockEndpoint header = getMockEndpoint("mock:header");
         header.expectedBodiesReceived("HEADER:foo");
@@ -83,13 +99,9 @@ public class FromFileMulticastToFilesTest extends ContextTestSupport {
         end.expectedMessageCount(1);
         end.expectedFileExists(testFile(".camel/foo.txt"));
 
-        template.sendBodyAndHeader(fileUri(), "foo", Exchange.FILE_NAME, "foo.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "foo", Exchange.FILE_NAME, "foo.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
 }

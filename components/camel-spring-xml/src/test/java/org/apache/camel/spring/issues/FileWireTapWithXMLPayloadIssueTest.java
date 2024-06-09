@@ -32,9 +32,9 @@ public class FileWireTapWithXMLPayloadIssueTest extends ContextTestSupport {
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        template.sendBodyAndHeader(fileUri(),
+        template.sendBodyAndHeader(sfpUri(fileUri()),
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                                              + "<sample>\n<test>Helloooo</test>\n</sample>",
+                                                      + "<sample>\n<test>Helloooo</test>\n</sample>",
                 Exchange.FILE_NAME, "hello.xml");
     }
 

@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.AggregationStrategy;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -34,9 +36,9 @@ public class FileMulticastDeleteTest extends ContextTestSupport {
         getMockEndpoint("mock:bar").expectedBodiesReceived("Hello World");
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

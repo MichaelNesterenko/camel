@@ -17,21 +17,16 @@
 package org.apache.camel.component.file.stress;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
-@Disabled("Manual test")
-@DisabledOnOs(OS.WINDOWS)
-public class FileAsyncStressManualTest extends ContextTestSupport {
+public class FileAsyncStressTest extends ContextTestSupport {
 
     private int files = 150;
 
@@ -40,20 +35,18 @@ public class FileAsyncStressManualTest extends ContextTestSupport {
     public void setUp() throws Exception {
         super.setUp();
         for (int i = 0; i < files; i++) {
-            template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, i + ".txt");
+            template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, i + ".txt");
         }
     }
 
     @Test
     public void testAsyncStress() throws Exception {
+        getMockEndpoint("mock:result").expectedMessageCount(files);
+
         // start route when all the files have been written
         context.getRouteController().startRoute("foo");
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedMinimumMessageCount(100);
-        mock.setResultWaitTime(30000);
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

@@ -18,17 +18,22 @@ package org.apache.camel.component.file;
 
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test to verify exclusive read option using *none*
@@ -36,6 +41,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class FileExclusiveReadNoneStrategyTest extends ContextTestSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileExclusiveReadNoneStrategyTest.class);
+
+    static final String FINISH_MARKER = "Bye World";
+
+    final String targetFile = "slowfile/hello.txt";
+
+    CountDownLatch fileWriteLatch = new CountDownLatch(1);
 
     @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
@@ -58,11 +69,15 @@ public class FileExclusiveReadNoneStrategyTest extends ContextTestSupport {
         // to poll
         template.sendBody("seda:start", "Create the slow file");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         String body = mock.getReceivedExchanges().get(0).getIn().getBody(String.class);
-        LOG.debug("Body is: {}", body);
-        assertFalse(body.endsWith("Bye World"), "Should not wait and read the entire file");
+        assertFalse(body.endsWith(FINISH_MARKER), "Should not wait and read the entire file");
+
+        fileWriteLatch.countDown();
+        Awaitility.await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+            assertTrue(Files.readString(testFile(targetFile)).endsWith(FINISH_MARKER));
+        });
     }
 
     private class MySlowFileProcessor implements Processor {
@@ -70,14 +85,14 @@ public class FileExclusiveReadNoneStrategyTest extends ContextTestSupport {
         @Override
         public void process(Exchange exchange) throws Exception {
             LOG.info("Creating a slow file with no locks...");
-            try (OutputStream fos = Files.newOutputStream(testFile("slowfile/hello.txt"))) {
+            try (OutputStream fos = Files.newOutputStream(testFile(targetFile))) {
                 fos.write("Hello World".getBytes());
+                fileWriteLatch.await(60, TimeUnit.SECONDS);
                 for (int i = 0; i < 3; i++) {
-                    Thread.sleep(100);
                     fos.write(("Line #" + i).getBytes());
                     LOG.info("Appending to slowfile");
                 }
-                fos.write("Bye World".getBytes());
+                fos.write(FINISH_MARKER.getBytes());
             }
             LOG.info("... done creating slowfile");
         }

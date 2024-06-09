@@ -31,7 +31,7 @@ public class TransactionalClientDataSourceTransactedWithFileOnExceptionTest exte
 
     @Test
     public void testTransactionSuccess() throws Exception {
-        template.sendBodyAndHeader(fileUri("okay"), "Hello World", Exchange.FILE_NAME, "okay.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("okay")), "Hello World", Exchange.FILE_NAME, "okay.txt");
 
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
             // wait for route to complete
@@ -48,7 +48,7 @@ public class TransactionalClientDataSourceTransactedWithFileOnExceptionTest exte
         error.message(0).header(Exchange.EXCEPTION_CAUGHT).isInstanceOf(IllegalArgumentException.class);
         error.expectedFileExists(testFile("failed/fail.txt"));
 
-        template.sendBodyAndHeader(fileUri("fail"), "Hello World", Exchange.FILE_NAME, "fail.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("fail")), "Hello World", Exchange.FILE_NAME, "fail.txt");
 
         // wait for route to complete
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {

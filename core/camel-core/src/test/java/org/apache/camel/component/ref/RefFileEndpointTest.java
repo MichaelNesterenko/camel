@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.ref;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -32,9 +34,9 @@ public class RefFileEndpointTest extends ContextTestSupport {
     public void testRefFileEndpoint() throws Exception {
         getMockEndpoint("mock:result").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         FileConsumer consumer = (FileConsumer) context.getRoute("foo").getConsumer();
         assertEquals(3000, consumer.getDelay());

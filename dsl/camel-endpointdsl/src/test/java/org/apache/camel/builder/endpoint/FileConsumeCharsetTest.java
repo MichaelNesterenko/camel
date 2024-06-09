@@ -17,9 +17,9 @@
 package org.apache.camel.builder.endpoint;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.Exchange;
-import org.apache.camel.builder.NotifyBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit5.TestSupport;
@@ -36,20 +36,16 @@ public class FileConsumeCharsetTest extends BaseEndpointDslTest {
     public void setUp() throws Exception {
         TestSupport.deleteDirectory(TEST_DATA_DIR);
         super.setUp();
-        template.sendBodyAndHeader("file://" + TEST_DATA_DIR + "?charset=UTF-8", "Hello World \u4f60\u597d", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri("file://" + TEST_DATA_DIR + "?charset=UTF-8"), "Hello World \u4f60\u597d",
+                Exchange.FILE_NAME,
                 "report.txt");
     }
 
     @Test
     public void testConsumeAndDelete() throws Exception {
-        NotifyBuilder oneExchangeDone = new NotifyBuilder(context).whenDone(1).create();
+        getMockEndpoint("mock:result").expectedBodiesReceived("Hello World \u4f60\u597d");
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceived("Hello World \u4f60\u597d");
-
-        MockEndpoint.assertIsSatisfied(context);
-
-        oneExchangeDone.matchesWaitTime();
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
 
         // file should not exists
         assertFalse(new File(TEST_DATA_DIR, "report.txt").exists(), "File should been deleted");

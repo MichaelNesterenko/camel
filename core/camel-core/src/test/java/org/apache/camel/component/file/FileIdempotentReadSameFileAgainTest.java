@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -33,17 +35,17 @@ public class FileIdempotentReadSameFileAgainTest extends ContextTestSupport {
         // some file systems may read files in different order
         mock.expectedBodiesReceivedInAnyOrder("Hello World", "Foo");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "foo.txt");
-        template.sendBodyAndHeader(fileUri(), "Foo", Exchange.FILE_NAME, "bar.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "foo.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Foo", Exchange.FILE_NAME, "bar.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         mock.reset();
         mock.expectedBodiesReceived("Bye World");
 
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "foo.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "foo.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

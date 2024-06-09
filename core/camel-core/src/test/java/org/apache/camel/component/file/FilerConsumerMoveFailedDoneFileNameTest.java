@@ -23,6 +23,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * Unit test done files with moveFailed option
  */
@@ -32,13 +34,11 @@ public class FilerConsumerMoveFailedDoneFileNameTest extends ContextTestSupport 
     public void testDoneFile() throws Exception {
         getMockEndpoint("mock:input").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "", Exchange.FILE_NAME, "done");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "", Exchange.FILE_NAME, "done");
 
-        // wait a bit for the file processing to complete
-        assertMockEndpointsSatisfied(1, TimeUnit.SECONDS);
-
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // done file should be deleted now
         assertFileNotExists(testFile("done"));

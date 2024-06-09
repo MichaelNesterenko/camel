@@ -55,7 +55,7 @@ public class IssueWithWrongEncodingTest extends CamelTestSupport {
 
         File file = new File("src/test/resources/products_with_valid_utf8.xml");
 
-        template.sendBodyAndHeader("file:" + testDirectory.toString(), file, Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri("file:" + testDirectory.toString()), file, Exchange.FILE_NAME,
                 "products_with_valid_utf8.xml");
 
         MockEndpoint.assertIsSatisfied(context);

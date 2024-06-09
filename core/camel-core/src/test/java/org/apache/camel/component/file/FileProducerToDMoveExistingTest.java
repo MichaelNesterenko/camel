@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -28,7 +29,10 @@ public class FileProducerToDMoveExistingTest extends ContextTestSupport {
 
     @Test
     public void testMoveExisting() throws Exception {
-        getMockEndpoint("mock:result").expectedMessageCount(2);
+        var mock = getMockEndpoint("mock:result");
+        mock.expectedMessageCount(2);
+        mock.expectedFileExists(testFile("out/old-hello.txt"));
+        mock.expectedFileExists(testFile("out/hello.txt"));
 
         Map<String, Object> headers = new HashMap<>();
         headers.put("myDir", "out");
@@ -36,10 +40,7 @@ public class FileProducerToDMoveExistingTest extends ContextTestSupport {
         template.sendBodyAndHeaders("direct:start", "Hello World", headers);
         template.sendBodyAndHeaders("direct:start", "Bye World", headers);
 
-        assertMockEndpointsSatisfied();
-
-        assertFileExists(testFile("out/old-hello.txt"));
-        assertFileExists(testFile("out/hello.txt"));
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

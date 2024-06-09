@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -60,17 +61,17 @@ public class FileConsumerPollStrategyTest extends ContextTestSupport {
 
     @Test
     public void testFirstPollRollbackThenCommit() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        assertMockEndpointsSatisfied();
-
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // give the file consumer a bit of time
-        Awaitility.await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertTrue(event.get().startsWith("rollbackcommit")));
+        Awaitility.await().atMost(Duration.ofSeconds(1))
+                .untilAsserted(() -> assertTrue(event.get().startsWith("rollbackcommit")));
     }
 
     private static class MyPollStrategy implements PollingConsumerPollStrategy {

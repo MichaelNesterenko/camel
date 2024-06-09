@@ -21,10 +21,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.builder.ThreadPoolProfileBuilder;
 import org.apache.camel.spi.ThreadPoolProfile;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
-@DisabledOnOs(OS.WINDOWS)
 public class ThrottlerThreadPoolProfileTest extends ContextTestSupport {
 
     @Test

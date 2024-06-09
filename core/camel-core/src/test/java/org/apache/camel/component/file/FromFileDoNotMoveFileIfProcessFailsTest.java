@@ -29,7 +29,7 @@ public class FromFileDoNotMoveFileIfProcessFailsTest extends ContextTestSupport 
 
     @Test
     public void testPollFileAndShouldNotBeMoved() throws Exception {
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "hello.txt");
 
         MockEndpoint mock = getMockEndpoint("mock:error");
         // it could potentially retry the file on the 2nd poll and then fail

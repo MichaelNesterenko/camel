@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -40,12 +42,11 @@ public class FileConsumerFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "This is a file to be filtered",
+        template.sendBodyAndHeader(sfpUri(fileUri()), "This is a file to be filtered",
                 Exchange.FILE_NAME,
                 "skipme.txt");
 
-        mock.setResultWaitTime(100);
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -53,14 +54,14 @@ public class FileConsumerFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "This is a file to be filtered",
+        template.sendBodyAndHeader(sfpUri(fileUri()), "This is a file to be filtered",
                 Exchange.FILE_NAME,
                 "skipme.txt");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME,
                 "hello.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

@@ -16,10 +16,14 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FileConsumerIdempotentOnExceptionHandledTest extends ContextTestSupport {
 
@@ -27,11 +31,10 @@ public class FileConsumerIdempotentOnExceptionHandledTest extends ContextTestSup
     public void testIdempotent() throws Exception {
         getMockEndpoint("mock:invalid").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        oneExchangeDone.matchesWaitTime();
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // the error is handled and the file is regarded as success and
         // therefore moved to .camel

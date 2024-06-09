@@ -17,11 +17,12 @@
 package org.apache.camel.component.file;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.component.file.strategy.GenericFileDeleteProcessStrategy;
 import org.apache.camel.spi.Registry;
 import org.junit.jupiter.api.Test;
 
@@ -40,13 +41,12 @@ public class FileBeginFailureOneTimeTest extends ContextTestSupport {
 
     @Test
     public void testBeginFailureOneTime() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
+        var mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
-
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         assertEquals(2, myStrategy.getInvoked(), "Begin should have been invoked 2 times");
     }
 
@@ -61,15 +61,9 @@ public class FileBeginFailureOneTimeTest extends ContextTestSupport {
         };
     }
 
-    private static class MyStrategy implements GenericFileProcessStrategy<File> {
+    private static class MyStrategy extends GenericFileDeleteProcessStrategy<File> {
 
         private volatile int invoked;
-
-        @Override
-        public void prepareOnStartup(
-                GenericFileOperations<File> fileGenericFileOperations, GenericFileEndpoint<File> fileGenericFileEndpoint)
-                throws Exception {
-        }
 
         @Override
         public boolean begin(
@@ -77,36 +71,10 @@ public class FileBeginFailureOneTimeTest extends ContextTestSupport {
                 Exchange exchange,
                 GenericFile<File> fileGenericFile)
                 throws Exception {
-            invoked++;
-            if (invoked <= 1) {
+            if (++invoked <= 1) {
                 throw new IllegalArgumentException("Damn I cannot do this");
             }
-            return true;
-        }
-
-        @Override
-        public void abort(
-                GenericFileOperations<File> fileGenericFileOperations, GenericFileEndpoint<File> fileGenericFileEndpoint,
-                Exchange exchange,
-                GenericFile<File> fileGenericFile)
-                throws Exception {
-            // noop
-        }
-
-        @Override
-        public void commit(
-                GenericFileOperations<File> fileGenericFileOperations, GenericFileEndpoint<File> fileGenericFileEndpoint,
-                Exchange exchange,
-                GenericFile<File> fileGenericFile)
-                throws Exception {
-        }
-
-        @Override
-        public void rollback(
-                GenericFileOperations<File> fileGenericFileOperations, GenericFileEndpoint<File> fileGenericFileEndpoint,
-                Exchange exchange,
-                GenericFile<File> fileGenericFile)
-                throws Exception {
+            return super.begin(fileGenericFileOperations, fileGenericFileEndpoint, exchange, fileGenericFile);
         }
 
         public int getInvoked() {

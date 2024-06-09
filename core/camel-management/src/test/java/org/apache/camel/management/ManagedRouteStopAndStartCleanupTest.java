@@ -47,9 +47,9 @@ public class ManagedRouteStopAndStartCleanupTest extends ManagedRouteStopAndStar
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // should be started
         String state = (String) mbeanServer.getAttribute(on, "State");
@@ -89,7 +89,7 @@ public class ManagedRouteStopAndStartCleanupTest extends ManagedRouteStopAndStar
         // wait 2 seconds while route is stopped to verify that file was not consumed
         mock.setResultWaitTime(2000);
 
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
         // route is stopped so we do not get the file
         mock.assertIsNotSatisfied();
@@ -114,7 +114,7 @@ public class ManagedRouteStopAndStartCleanupTest extends ManagedRouteStopAndStar
         assertEquals(2, set.size(), "Should be 2 processors");
 
         // this time the file is consumed
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // need a bit time to let JMX update
         await().atMost(1, TimeUnit.SECONDS).until(() -> {

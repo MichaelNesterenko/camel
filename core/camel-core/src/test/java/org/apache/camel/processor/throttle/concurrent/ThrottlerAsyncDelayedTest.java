@@ -23,7 +23,9 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
+@Isolated
 public class ThrottlerAsyncDelayedTest extends ContextTestSupport {
     private static final int INTERVAL = 500;
     protected int messageCount = 9;

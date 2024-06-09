@@ -16,8 +16,10 @@
  */
 package org.apache.camel.test.junit5;
 
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -76,6 +78,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,6 +93,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public abstract class CamelTestSupport
         implements BeforeEachCallback, AfterEachCallback, AfterAllCallback, BeforeAllCallback, BeforeTestExecutionCallback,
         AfterTestExecutionCallback {
+
+    private static final java.util.regex.Pattern FILE_ENDPOINT_URI
+            = java.util.regex.Pattern.compile("file:(?<path>[^?]+)(?<query>\\?$)?");
 
     /**
      * JVM system property which can be set to true to turn on dumping route coverage statistics.
@@ -121,6 +127,9 @@ public abstract class CamelTestSupport
     private boolean isCreateCamelContextPerClass = false;
     private final CamelRouteCoverageDumper routeCoverageDumper = new CamelRouteCoverageDumper();
     private ExtensionContext.Store globalStore;
+
+    @TempDir
+    private Path safePublicationStagingDirectory;
 
     @Override
     public void afterTestExecution(ExtensionContext context) throws Exception {
@@ -1011,6 +1020,24 @@ public abstract class CamelTestSupport
      */
     protected void enableJMX() {
         DefaultCamelContext.setDisableJmx(false);
+    }
+
+    /**
+     * Forces file to be created in a separate staging directory before moving into the target directory
+     *
+     * @param  uri original file uri
+     * @return     amended file uri with {@code tempPrefix} appended to the uri
+     */
+    protected String sfpUri(String uri) {
+        var matcher = FILE_ENDPOINT_URI.matcher(uri);
+
+        if (!matcher.matches()) {
+            throw new IllegalStateException("unable to create safe publication uri from: " + uri);
+        }
+
+        return uri +
+               (matcher.group("query") == null ? "?" : "&") +
+               "tempPrefix=" + Path.of(matcher.group("path")).relativize(safePublicationStagingDirectory) + File.separator;
     }
 
     /**

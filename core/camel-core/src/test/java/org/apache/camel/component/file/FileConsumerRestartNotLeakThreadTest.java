@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -32,8 +34,8 @@ public class FileConsumerRestartNotLeakThreadTest extends ContextTestSupport {
         int before = Thread.activeCount();
 
         getMockEndpoint("mock:foo").expectedMessageCount(1);
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        assertMockEndpointsSatisfied();
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         for (int i = 0; i < 50; i++) {
             context.getRouteController().stopRoute("foo");
@@ -43,8 +45,8 @@ public class FileConsumerRestartNotLeakThreadTest extends ContextTestSupport {
         resetMocks();
 
         getMockEndpoint("mock:foo").expectedMessageCount(1);
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
-        assertMockEndpointsSatisfied();
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         int active = Thread.activeCount() - before;
         log.info("Active threads after restarts: {}", active);

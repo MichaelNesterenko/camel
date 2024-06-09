@@ -64,7 +64,7 @@ public class FileBatchConsumerMemoryLeakManualTest extends BaseEndpointDslTest {
 
         deleteDirectory("target/data/filesorter/archiv");
         for (int c = 0; c < 100; c++) {
-            template.sendBodyAndHeader(fileUrl + "c", "test", Exchange.FILE_NAME, c + ".dat");
+            template.sendBodyAndHeader(sfpUri(fileUrl + "c"), "test", Exchange.FILE_NAME, c + ".dat");
         }
         context.addRoutes(new EndpointRouteBuilder() {
             @Override

@@ -24,11 +24,11 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.support.processor.idempotent.MemoryIdempotentRepository;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for the idempotent=true option.
@@ -47,15 +47,14 @@ public class FileConsumerIdempotentTest extends ContextTestSupport {
 
     @Test
     public void testIdempotent() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "report.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "report.txt");
 
         // consume the file the first time
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        assertMockEndpointsSatisfied();
-
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // reset mock and set new expectations
         mock.reset();
@@ -66,7 +65,7 @@ public class FileConsumerIdempotentTest extends ContextTestSupport {
 
         // should NOT consume the file again, let a bit time pass to let the
         // consumer try to consume it but it should not
-        Awaitility.await().pollDelay(100, TimeUnit.MILLISECONDS).untilAsserted(() -> assertMockEndpointsSatisfied());
+        mock.assertIsSatisfied(1000);
 
         FileEndpoint fe = context.getEndpoint(fileUri(), FileEndpoint.class);
         assertNotNull(fe);

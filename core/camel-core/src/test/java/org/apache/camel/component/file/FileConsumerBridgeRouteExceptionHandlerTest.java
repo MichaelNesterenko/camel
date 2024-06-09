@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -40,10 +41,10 @@ public class FileConsumerBridgeRouteExceptionHandlerTest extends ContextTestSupp
         getMockEndpoint("mock:result").expectedMessageCount(2);
         getMockEndpoint("mock:error").expectedBodiesReceived("Error Forced to simulate no space on device");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         assertEquals(2, myReadLockStrategy.getCounter(), "Should pickup bye.txt file 2 times");
     }

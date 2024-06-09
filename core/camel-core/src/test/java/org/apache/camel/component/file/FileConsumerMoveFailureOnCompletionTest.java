@@ -33,7 +33,7 @@ public class FileConsumerMoveFailureOnCompletionTest extends ContextTestSupport 
 
         getMockEndpoint("mock:failed").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Kaboom", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Kaboom", Exchange.FILE_NAME, "bye.txt");
 
         mock.assertIsSatisfied(1000);
     }
@@ -47,8 +47,8 @@ public class FileConsumerMoveFailureOnCompletionTest extends ContextTestSupport 
 
         getMockEndpoint("mock:failed").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "Kaboom", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Kaboom", Exchange.FILE_NAME, "bye.txt");
 
         mock.assertIsSatisfied(1000);
     }

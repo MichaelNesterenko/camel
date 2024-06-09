@@ -16,13 +16,12 @@
  */
 package org.apache.camel.component.file;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -38,16 +37,16 @@ public class FileConsumerIncludeNameTest extends ContextTestSupport {
 
         sendFiles();
 
-        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> mock.assertIsSatisfied());
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     private void sendFiles() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.xml");
-        template.sendBodyAndHeader(fileUri(), "Reports1", Exchange.FILE_NAME, "report1.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "secret.txt");
-        template.sendBodyAndHeader(fileUri(), "Reports2", Exchange.FILE_NAME, "report2.txt");
-        template.sendBodyAndHeader(fileUri(), "Reports3", Exchange.FILE_NAME, "Report3.txt");
-        template.sendBodyAndHeader(fileUri(), "Secret2", Exchange.FILE_NAME, "Secret2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Reports1", Exchange.FILE_NAME, "report1.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "secret.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Reports2", Exchange.FILE_NAME, "report2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Reports3", Exchange.FILE_NAME, "Report3.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Secret2", Exchange.FILE_NAME, "Secret2.txt");
     }
 
     @Override

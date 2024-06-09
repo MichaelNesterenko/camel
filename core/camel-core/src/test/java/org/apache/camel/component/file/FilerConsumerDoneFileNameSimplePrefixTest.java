@@ -21,8 +21,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for writing done files
@@ -33,22 +34,19 @@ public class FilerConsumerDoneFileNameSimplePrefixTest extends ContextTestSuppor
     public void testDoneFile() throws Exception {
         getMockEndpoint("mock:result").expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        // wait a bit and it should not pickup the written file as there are no
-        // done file
-        Awaitility.await().pollDelay(250, TimeUnit.MILLISECONDS).untilAsserted(() -> assertMockEndpointsSatisfied());
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         resetMocks();
         oneExchangeDone.reset();
-
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
 
         // write the done file
-        template.sendBodyAndHeader(fileUri(), "", Exchange.FILE_NAME, "done-hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "", Exchange.FILE_NAME, "done-hello.txt");
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // done file should be deleted now
         assertFileNotExists(testFile("done-hello.txt"));

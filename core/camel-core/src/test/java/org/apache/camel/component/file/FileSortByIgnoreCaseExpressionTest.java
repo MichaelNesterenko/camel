@@ -16,10 +16,11 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -32,13 +33,14 @@ public class FileSortByIgnoreCaseExpressionTest extends ContextTestSupport {
 
         template.sendBodyAndHeader(fileUri(folder), "Hello London", Exchange.FILE_NAME, "REPORT-2.txt");
 
-        template.sendBodyAndHeader(fileUri(folder), "Hello Copenhagen", Exchange.FILE_NAME,
-                "Report-1.xml");
+        template.sendBodyAndHeader(fileUri(folder), "Hello Copenhagen", Exchange.FILE_NAME, "Report-1.xml");
     }
 
     @Test
     public void testSortFilesByNameWithCase() throws Exception {
         prepareFolder("a");
+
+        getMockEndpoint("mock:result").expectedBodiesReceived("Hello London", "Hello Copenhagen", "Hello Paris");
 
         context.addRoutes(new RouteBuilder() {
             @Override
@@ -46,17 +48,15 @@ public class FileSortByIgnoreCaseExpressionTest extends ContextTestSupport {
                 from(fileUri("a/?sortBy=file:name&initialDelay=250&delay=1000")).convertBodyTo(String.class).to("mock:result");
             }
         });
-        context.start();
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceived("Hello London", "Hello Copenhagen", "Hello Paris");
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testSortFilesByNameNoCase() throws Exception {
         prepareFolder("b");
+
+        getMockEndpoint("mock:nocase").expectedBodiesReceived("Hello Copenhagen", "Hello London", "Hello Paris");
 
         context.addRoutes(new RouteBuilder() {
             @Override
@@ -65,17 +65,15 @@ public class FileSortByIgnoreCaseExpressionTest extends ContextTestSupport {
                         .to("mock:nocase");
             }
         });
-        context.start();
 
-        MockEndpoint nocase = getMockEndpoint("mock:nocase");
-        nocase.expectedBodiesReceived("Hello Copenhagen", "Hello London", "Hello Paris");
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testSortFilesByNameNoCaseReverse() throws Exception {
         prepareFolder("c");
+
+        getMockEndpoint("mock:nocasereverse").expectedBodiesReceived("Hello Paris", "Hello London", "Hello Copenhagen");
 
         context.addRoutes(new RouteBuilder() {
             @Override
@@ -84,12 +82,8 @@ public class FileSortByIgnoreCaseExpressionTest extends ContextTestSupport {
                         .to("mock:nocasereverse");
             }
         });
-        context.start();
 
-        MockEndpoint nocasereverse = getMockEndpoint("mock:nocasereverse");
-        nocasereverse.expectedBodiesReceived("Hello Paris", "Hello London", "Hello Copenhagen");
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

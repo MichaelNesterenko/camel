@@ -254,7 +254,7 @@ public class TotalRequestsThrottler extends AbstractThrottler {
                 ScheduledFuture<?> next = asyncExecutor.schedule(this::clean, cleanPeriodMillis, TimeUnit.MILLISECONDS);
                 ScheduledFuture<?> prev = cleanFuture.getAndSet(next);
                 if (prev != null) {
-                    prev.cancel(false);
+                    prev.cancel(false); // TODO race condition here on replacement and cancellation
                 }
                 // try and incur the least amount of overhead while releasing permits back to the queue
                 if (LOG.isTraceEnabled()) {

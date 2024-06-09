@@ -18,6 +18,7 @@ package org.apache.camel.management;
 
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -34,13 +35,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// TODO semantically equivalent to org.apache.camel.impl.StopRouteAbortAfterTimeoutTest, needs unification
 @DisabledOnOs({ OS.WINDOWS, OS.AIX })
 public class ManagedRouteStopWithAbortAfterTimeoutTest extends ManagementTestSupport {
 
+    static final int MESSAGE_DELAY_MS = 10_000;
+    static final int MESSAGE_COUNT = 5;
+    static final int ROUTE_SHUTDOWN_AWAIT_MS = MESSAGE_COUNT * MESSAGE_DELAY_MS / 50;
+    static final int CTX_SHUTDOWN_TIMEOUT_SEC = 3;
+
     @Test
     public void testStopRouteWithAbortAfterTimeoutTrue() throws Exception {
-        MockEndpoint mockEP = getMockEndpoint("mock:result");
-        mockEP.setExpectedMessageCount(10);
+        var totalMessageCount = 2 * MESSAGE_COUNT;
+        getMockEndpoint("mock:result").setExpectedMessageCount(10);
 
         MBeanServer mbeanServer = getMBeanServer();
         ObjectName on = getRouteObjectName(mbeanServer);
@@ -50,12 +57,12 @@ public class ManagedRouteStopWithAbortAfterTimeoutTest extends ManagementTestSup
         assertEquals(ServiceStatus.Started.name(), state, "route should be started");
 
         //send some message through the route
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < MESSAGE_COUNT; i++) {
             template.sendBody("seda:start", "message-" + i);
         }
 
-        // stop route with a 1s timeout and abortAfterTimeout=true (should abort after 1s)
-        Long timeout = Long.valueOf(1);
+        // stop route with a timeout and abortAfterTimeout=true (should abort )
+        Long timeout = Long.valueOf(ROUTE_SHUTDOWN_AWAIT_MS / 1000);
         Boolean abortAfterTimeout = Boolean.TRUE;
         Object[] params = { timeout, abortAfterTimeout };
         String[] sig = { "java.lang.Long", "java.lang.Boolean" };
@@ -67,11 +74,11 @@ public class ManagedRouteStopWithAbortAfterTimeoutTest extends ManagementTestSup
         assertEquals(ServiceStatus.Started.name(), state, "route should still be started");
 
         //send some more messages through the route
-        for (int i = 5; i < 10; i++) {
+        for (int i = MESSAGE_COUNT; i < 2 * MESSAGE_COUNT; i++) {
             template.sendBody("seda:start", "message-" + i);
         }
 
-        mockEP.assertIsSatisfied();
+        assertMockEndpointsSatisfied(totalMessageCount * MESSAGE_DELAY_MS, TimeUnit.SECONDS);
     }
 
     @Test
@@ -86,12 +93,12 @@ public class ManagedRouteStopWithAbortAfterTimeoutTest extends ManagementTestSup
         assertEquals(ServiceStatus.Started.name(), state, "route should be started");
 
         //send some message through the route
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < MESSAGE_COUNT; i++) {
             template.sendBody("seda:start", "message-" + i);
         }
 
         // stop route with a 1s timeout and abortAfterTimeout=false (normal timeout behavior)
-        Long timeout = Long.valueOf(1);
+        Long timeout = Long.valueOf(ROUTE_SHUTDOWN_AWAIT_MS);
         Boolean abortAfterTimeout = Boolean.FALSE;
         Object[] params = { timeout, abortAfterTimeout };
         String[] sig = { "java.lang.Long", "java.lang.Boolean" };
@@ -102,14 +109,15 @@ public class ManagedRouteStopWithAbortAfterTimeoutTest extends ManagementTestSup
         assertTrue(stopRouteResponse, "stopRoute response should be True");
         assertEquals(ServiceStatus.Stopped.name(), state, "route should be stopped");
 
+        int before = mockEP.getExchanges().size();
+
         // send some more messages through the route
-        for (int i = 5; i < 10; i++) {
+        for (int i = MESSAGE_COUNT; i < 2 * MESSAGE_COUNT; i++) {
             template.sendBody("seda:start", "message-" + i);
         }
 
-        Awaitility.await().atMost(Duration.ofSeconds(1))
-                .untilAsserted(
-                        () -> assertTrue(mockEP.getExchanges().size() <= 5, "Should not have received more than 5 messages"));
+        Awaitility.await().atMost(Duration.ofSeconds(1)).untilAsserted(
+                () -> assertTrue(mockEP.getExchanges().size() == before, "Should not have received more than 5 messages"));
     }
 
     static ObjectName getRouteObjectName(MBeanServer mbeanServer) throws Exception {
@@ -124,11 +132,10 @@ public class ManagedRouteStopWithAbortAfterTimeoutTest extends ManagementTestSup
             @Override
             public void configure() throws Exception {
                 // shutdown this test faster
-                context.getShutdownStrategy().setTimeout(3);
+                context.getShutdownStrategy().setTimeout(CTX_SHUTDOWN_TIMEOUT_SEC);
 
-                from("seda:start").delay(100).to("mock:result");
+                from("seda:start").routeId("start").delay(MESSAGE_DELAY_MS).to("mock:result");
             }
         };
     }
-
 }

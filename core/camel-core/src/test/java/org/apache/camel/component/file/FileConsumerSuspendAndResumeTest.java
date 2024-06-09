@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.apache.camel.Consumer;
@@ -30,6 +31,7 @@ import org.apache.camel.support.RoutePolicySupport;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FileConsumerSuspendAndResumeTest extends ContextTestSupport {
 
@@ -43,8 +45,8 @@ public class FileConsumerSuspendAndResumeTest extends ContextTestSupport {
         template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
         template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // the route is suspended by the policy so we should only receive one
         try (Stream<Path> list = Files.list(testDirectory())) {
@@ -60,8 +62,8 @@ public class FileConsumerSuspendAndResumeTest extends ContextTestSupport {
         // now resume it
         myPolicy.resumeConsumer();
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // and the file is now deleted
         try (Stream<Path> list = Files.list(testDirectory())) {

@@ -16,20 +16,18 @@
  */
 package org.apache.camel.processor.enricher;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.AggregationStrategy;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class PollEnrichFileCustomAggregationStrategyTest extends ContextTestSupport {
 
-    final int ENRICH_TIMEOUT = 10_000;
-    final int AWAIT_TIMEOUT = ENRICH_TIMEOUT * 2;
+    final int ENRICH_TIMEOUT = 30_000;
 
     @Test
     public void testPollEnrichCustomAggregationStrategyBody() throws Exception {
@@ -40,13 +38,11 @@ public class PollEnrichFileCustomAggregationStrategyTest extends ContextTestSupp
         mock.expectedFileExists(testFile("enrich/.done/AAA.fin"));
         mock.expectedFileExists(testFile("enrichdata/.done/AAA.dat"));
 
-        template.sendBodyAndHeader(fileUri("enrich"), "Start", Exchange.FILE_NAME, "AAA.fin");
-        template.sendBodyAndHeader(fileUri("enrichdata"), "Big file", Exchange.FILE_NAME, "AAA.dat");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrich")), "Start", Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrichdata")), "Big file", Exchange.FILE_NAME, "AAA.dat");
 
-        Awaitility.await().timeout(Duration.ofMillis(AWAIT_TIMEOUT)).untilAsserted(() -> {
-            assertMockEndpointsSatisfied();
-            assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
-        });
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
     }
 
     @Override

@@ -25,7 +25,6 @@ import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,14 +61,11 @@ public class DirectoryCreateIssueTest extends ContextTestSupport {
                 in.setBody("Contents of test file");
             }
         });
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
-        // wait a little while for the files to settle down
-        Awaitility.await().pollDelay(50, TimeUnit.MILLISECONDS).untilAsserted(() -> {
-            for (int i = 0; i < numFiles; i++) {
-                assertTrue(Files.isRegularFile(testFile("a/b/c/d/e/f/g/h/file" + i + ".txt")));
-            }
-        });
+        for (int i = 0; i < numFiles; i++) {
+            assertTrue(Files.isRegularFile(testFile("a/b/c/d/e/f/g/h/file" + i + ".txt")));
+        }
     }
 
 }

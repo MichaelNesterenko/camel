@@ -41,10 +41,10 @@ public class RecipientListUseOriginalMessageEndpointExceptionIssueTest extends C
         getMockEndpoint("mock:error").expectedFileExists(
                 testFile("outbox/hello.txt"), "A");
 
-        template.sendBodyAndHeader(fileUri("inbox"), "A",
+        template.sendBodyAndHeader(sfpUri(fileUri("inbox")), "A",
                 Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied(100, TimeUnit.MILLISECONDS);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

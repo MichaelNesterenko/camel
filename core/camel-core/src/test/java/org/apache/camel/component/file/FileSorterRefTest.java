@@ -17,11 +17,11 @@
 package org.apache.camel.component.file;
 
 import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.spi.Registry;
 import org.junit.jupiter.api.Test;
 
@@ -40,11 +40,10 @@ public class FileSorterRefTest extends ContextTestSupport {
     @Test
     public void testSortFiles() throws Exception {
         template.sendBodyAndHeader(fileUri(), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
-
         template.sendBodyAndHeader(fileUri(), "Hello London", Exchange.FILE_NAME, "london.txt");
-
         template.sendBodyAndHeader(fileUri(), "Hello Copenhagen", Exchange.FILE_NAME, "copenhagen.txt");
 
+        getMockEndpoint("mock:result").expectedBodiesReceived("Hello Copenhagen", "Hello London", "Hello Paris");
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -52,18 +51,13 @@ public class FileSorterRefTest extends ContextTestSupport {
             }
         });
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceived("Hello Copenhagen", "Hello London", "Hello Paris");
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
-    // START SNIPPET: e1
     public static class MyFileSorter<T> implements Comparator<GenericFile<T>> {
         @Override
         public int compare(GenericFile<T> o1, GenericFile<T> o2) {
             return o1.getFileName().compareToIgnoreCase(o2.getFileName());
         }
     }
-    // END SNIPPET: e1
-
 }

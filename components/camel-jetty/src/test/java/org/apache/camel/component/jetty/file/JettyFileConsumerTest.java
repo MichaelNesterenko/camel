@@ -75,7 +75,7 @@ public class JettyFileConsumerTest extends BaseJettyTest {
         getMockEndpoint("mock:result").expectedMessageCount(1);
 
         File jpg = new File("src/test/resources/java.jpg");
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory, "binary"), jpg, Exchange.FILE_NAME, "java.jpg");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory, "binary")), jpg, Exchange.FILE_NAME, "java.jpg");
 
         MockEndpoint.assertIsSatisfied(context);
 

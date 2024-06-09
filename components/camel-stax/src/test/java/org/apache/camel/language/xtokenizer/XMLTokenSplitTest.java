@@ -40,7 +40,8 @@ public class XMLTokenSplitTest extends CamelTestSupport {
         mock.message(2).body().isEqualTo("<order id=\"3\" xmlns=\"http:acme.com\">DSL in Action</order>");
 
         String body = createBody();
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory, "xtokenizer"), body, Exchange.FILE_NAME, "orders.xml");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory, "xtokenizer")), body, Exchange.FILE_NAME,
+                "orders.xml");
 
         MockEndpoint.assertIsSatisfied(context);
     }
@@ -54,7 +55,8 @@ public class XMLTokenSplitTest extends CamelTestSupport {
         mock.message(2).body().isEqualTo("<order id=\"3\" xmlns=\"http:acme.com\">DSL in Action</order>");
 
         String body = createBody();
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory, "xtokenizer2"), body, Exchange.FILE_NAME, "orders.xml");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory, "xtokenizer2")), body, Exchange.FILE_NAME,
+                "orders.xml");
 
         MockEndpoint.assertIsSatisfied(context);
     }

@@ -16,6 +16,8 @@
  */
 package org.apache.camel.processor;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -38,9 +40,9 @@ public class SplitGroupMultiXmlTest extends ContextTestSupport {
         mock.message(2).body().isEqualTo("<order id=\"5\" xmlns=\"http:acme.com\">Groovy in Action</order>");
 
         String body = createBody();
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "orders.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "orders.xml");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     protected String createBody() {

@@ -16,11 +16,12 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,16 +31,10 @@ public class FileToFileWithFlattenTest extends ContextTestSupport {
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        template.sendBodyAndHeader(fileUri("flatten-in"), "Bye World", Exchange.FILE_NAME, "bye.txt");
-        template.sendBodyAndHeader(fileUri("flatten-in"), "Hello World", Exchange.FILE_NAME, "sub/hello.txt");
-        template.sendBodyAndHeader(fileUri("flatten-in"), "Goodday World", Exchange.FILE_NAME, "sub/sub2/goodday.txt");
-    }
-
-    @Override
-    @AfterEach
-    public void tearDown() throws Exception {
-        context.stop();
-        super.tearDown();
+        template.sendBodyAndHeader(sfpUri(fileUri("flatten-in")), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("flatten-in"), "../"), "Hello World", Exchange.FILE_NAME, "sub/hello.txt");
+        template.sendBodyAndHeader(
+                sfpUri(fileUri("flatten-in"), "../../"), "Goodday World", Exchange.FILE_NAME, "sub/sub2/goodday.txt");
     }
 
     @Test
@@ -51,7 +46,6 @@ public class FileToFileWithFlattenTest extends ContextTestSupport {
                         .to(fileUri("flatten-out"), "mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(3);
@@ -66,7 +60,7 @@ public class FileToFileWithFlattenTest extends ContextTestSupport {
         mock.expectedFileExists(testFile("flatten-in/sub/.camel/hello.txt"));
         mock.expectedFileExists(testFile("flatten-in/sub/sub2/.camel/goodday.txt"));
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -78,7 +72,6 @@ public class FileToFileWithFlattenTest extends ContextTestSupport {
                         .to(fileUri("flatten-out?flatten=true"), "mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(3);
@@ -93,7 +86,7 @@ public class FileToFileWithFlattenTest extends ContextTestSupport {
         mock.expectedFileExists(testFile("flatten-in/sub/.camel/hello.txt"));
         mock.expectedFileExists(testFile("flatten-in/sub/sub2/.camel/goodday.txt"));
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

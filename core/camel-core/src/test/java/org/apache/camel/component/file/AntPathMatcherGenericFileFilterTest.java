@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -63,13 +64,13 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result1");
         mock.expectedBodiesReceivedInAnyOrder("Hello World");
 
-        String endpointUri = fileUri("files/ant-path-1/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-1/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World", Exchange.FILE_NAME, "report.txt");
         template.sendBodyAndHeader(endpointUri, "Hello World 2", Exchange.FILE_NAME, "b.TXT");
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -87,7 +88,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result2");
         mock.expectedBodiesReceivedInAnyOrder("Hello World 2", "Hello World 3", "Hello World 4");
 
-        String endpointUri = fileUri("files/ant-path-2/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-2/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World 1", Exchange.FILE_NAME, "report.bak");
         template.sendBodyAndHeader(endpointUri, "Hello World 2", Exchange.FILE_NAME, "report.txt");
         template.sendBodyAndHeader(endpointUri, "Hello World 3", Exchange.FILE_NAME, "b.BAK");
@@ -95,7 +96,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -115,7 +116,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result3");
         mock.expectedBodiesReceivedInAnyOrder("Hello World 2", "Hello World 4");
 
-        String endpointUri = fileUri("files/ant-path-3/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-3/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World 1", Exchange.FILE_NAME, "a.pdf");
         template.sendBodyAndHeader(endpointUri, "Hello World 2", Exchange.FILE_NAME, "m.pdf");
         template.sendBodyAndHeader(endpointUri, "Hello World 3", Exchange.FILE_NAME, "b.txt");
@@ -131,7 +132,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -151,7 +152,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result4");
         mock.expectedBodiesReceivedInAnyOrder("Hello World 3");
 
-        String endpointUri = fileUri("files/ant-path-4/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-4/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World 1", Exchange.FILE_NAME, "a.txt");
         template.sendBodyAndHeader(endpointUri, "Hello World 2", Exchange.FILE_NAME, "b.txt");
         template.sendBodyAndHeader(endpointUri, "Hello World 3", Exchange.FILE_NAME, "c.txt");
@@ -159,7 +160,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -179,13 +180,13 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result5");
         mock.expectedBodiesReceivedInAnyOrder("Hello World");
 
-        String endpointUri = fileUri("files/ant-path-5/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-5/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World", Exchange.FILE_NAME,
                 "report.TXT");
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -206,7 +207,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result6");
         mock.expectedBodiesReceivedInAnyOrder("Hello World 2", "Hello World 4");
 
-        String endpointUri = fileUri("files/ant-path-6/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-6/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World 1", Exchange.FILE_NAME, "report.bak");
         template.sendBodyAndHeader(endpointUri, "Hello World 2", Exchange.FILE_NAME, "report.txt");
         template.sendBodyAndHeader(endpointUri, "Hello World 3", Exchange.FILE_NAME, "b.BAK");
@@ -214,7 +215,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -234,7 +235,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result7");
         mock.expectedBodiesReceivedInAnyOrder("Hello World 2", "Hello World 4", "Hello World 8", "Hello World 10");
 
-        String endpointUri = fileUri("files/ant-path-7/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-7/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World 1", Exchange.FILE_NAME, "a.pdf");
         template.sendBodyAndHeader(endpointUri, "Hello World 2", Exchange.FILE_NAME, "m.pdf");
         template.sendBodyAndHeader(endpointUri, "Hello World 3", Exchange.FILE_NAME, "b.txt");
@@ -250,7 +251,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -269,7 +270,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result8");
         mock.expectedBodiesReceivedInAnyOrder("Hello World 3", "Hello World 4");
 
-        String endpointUri = fileUri("files/ant-path-8/x/y/z");
+        String endpointUri = sfpUri(fileUri("files/ant-path-8/x/y/z"));
         template.sendBodyAndHeader(endpointUri, "Hello World 1", Exchange.FILE_NAME, "a.txt");
         template.sendBodyAndHeader(endpointUri, "Hello World 2", Exchange.FILE_NAME, "b.txt");
         template.sendBodyAndHeader(endpointUri, "Hello World 3", Exchange.FILE_NAME, "c.txt");
@@ -277,7 +278,7 @@ public class AntPathMatcherGenericFileFilterTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

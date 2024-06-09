@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -39,7 +40,7 @@ public class FileConsumerResumeStrategyTest extends ContextTestSupport {
 
     private static class TestFileSetResumeAdapter implements FileResumeAdapter, DirectoryEntriesResumeAdapter {
         private final List<String> processedFiles = Arrays.asList("0.txt", "1.txt", "2.txt");
-        private boolean resumedCalled;
+        private volatile boolean resumedCalled;
 
         @Override
         public void resume() {
@@ -67,16 +68,16 @@ public class FileConsumerResumeStrategyTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceivedInAnyOrder("3", "4", "5", "6");
 
-        template.sendBodyAndHeaders(fileUri("resume"), "0", headerFor(0));
-        template.sendBodyAndHeaders(fileUri("resume"), "1", headerFor(1));
-        template.sendBodyAndHeaders(fileUri("resume"), "2", headerFor(2));
-        template.sendBodyAndHeaders(fileUri("resume"), "3", headerFor(3));
-        template.sendBodyAndHeaders(fileUri("resume"), "4", headerFor(4));
-        template.sendBodyAndHeaders(fileUri("resume"), "5", headerFor(5));
-        template.sendBodyAndHeaders(fileUri("resume"), "6", headerFor(6));
+        template.sendBodyAndHeaders(sfpUri(fileUri("resume")), "0", headerFor(0));
+        template.sendBodyAndHeaders(sfpUri(fileUri("resume")), "1", headerFor(1));
+        template.sendBodyAndHeaders(sfpUri(fileUri("resume")), "2", headerFor(2));
+        template.sendBodyAndHeaders(sfpUri(fileUri("resume")), "3", headerFor(3));
+        template.sendBodyAndHeaders(sfpUri(fileUri("resume")), "4", headerFor(4));
+        template.sendBodyAndHeaders(sfpUri(fileUri("resume")), "5", headerFor(5));
+        template.sendBodyAndHeaders(sfpUri(fileUri("resume")), "6", headerFor(6));
 
         // only expect 4 of the 6 sent
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         assertTrue(adapter.resumedCalled, "The resume set should have resumables in this scenario");
     }
@@ -95,7 +96,6 @@ public class FileConsumerResumeStrategyTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-
                 bindToRegistry("testResumeStrategy", new TransientResumeStrategy(adapter));
 
                 from(fileUri("resume?noop=true&recursive=true"))

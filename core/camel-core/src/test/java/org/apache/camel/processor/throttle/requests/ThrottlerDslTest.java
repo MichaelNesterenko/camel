@@ -23,12 +23,11 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisabledOnOs(OS.WINDOWS)
+@Isolated
 public class ThrottlerDslTest extends ContextTestSupport {
     private static final int INTERVAL = 500;
     protected int messageCount = 9;

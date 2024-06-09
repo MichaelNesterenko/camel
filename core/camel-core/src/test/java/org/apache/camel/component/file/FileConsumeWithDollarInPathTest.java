@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -27,9 +29,9 @@ public class FileConsumeWithDollarInPathTest extends ContextTestSupport {
     public void testPathWithDollar() throws Exception {
         getMockEndpoint("mock:result").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri("edi$/dev1"), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("edi$/dev1")), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

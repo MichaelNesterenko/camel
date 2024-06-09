@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -27,13 +29,13 @@ public class FileConsumerExcludeExtTest extends ContextTestSupport {
     public void testFileConsumer() throws Exception {
         getMockEndpoint("mock:txt").expectedBodiesReceivedInAnyOrder("Hello World", "Bye World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "<customer>123</customer>", Exchange.FILE_NAME, "customer.xml");
-        template.sendBodyAndHeader(fileUri(), "123", Exchange.FILE_NAME, "order.dat");
-        template.sendBodyAndHeader(fileUri(), "<book>Camel Rocks</book>", Exchange.FILE_NAME, "book.Xml");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "<customer>123</customer>", Exchange.FILE_NAME, "customer.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "123", Exchange.FILE_NAME, "order.dat");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "<book>Camel Rocks</book>", Exchange.FILE_NAME, "book.Xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

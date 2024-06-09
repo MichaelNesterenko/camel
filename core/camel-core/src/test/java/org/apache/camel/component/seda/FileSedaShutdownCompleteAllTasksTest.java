@@ -33,7 +33,7 @@ public class FileSedaShutdownCompleteAllTasksTest extends ContextTestSupport {
 
     @Test
     public void testShutdownCompleteAllTasks() throws Exception {
-        String url = fileUri("?initialDelay=0&delay=10");
+        String url = sfpUri(fileUri("?initialDelay=0&delay=10"));
 
         // prepare 5 files to begin with
         template.sendBodyAndHeader(url, "A", Exchange.FILE_NAME, "a.txt");
@@ -71,7 +71,7 @@ public class FileSedaShutdownCompleteAllTasksTest extends ContextTestSupport {
         MockEndpoint bar = getMockEndpoint("mock:bar");
         bar.expectedMinimumMessageCount(1);
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         latch.await(5, TimeUnit.SECONDS);
 

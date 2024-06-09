@@ -43,7 +43,7 @@ public class XQueryFromFileExceptionTest extends CamelTestSupport {
 
         String body = "<person user='James'><firstName>James</firstName>"
                       + "<lastName>Strachan</lastName><city>London</city></person>";
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory), body, Exchange.FILE_NAME, "hello.xml");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)), body, Exchange.FILE_NAME, "hello.xml");
 
         MockEndpoint.assertIsSatisfied(context);
 
@@ -61,7 +61,7 @@ public class XQueryFromFileExceptionTest extends CamelTestSupport {
         // the last tag is not ended properly
         String body = "<person user='James'><firstName>James</firstName>"
                       + "<lastName>Strachan</lastName><city>London</city></person";
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory), body, Exchange.FILE_NAME, "hello2.xml");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)), body, Exchange.FILE_NAME, "hello2.xml");
 
         MockEndpoint.assertIsSatisfied(context);
 

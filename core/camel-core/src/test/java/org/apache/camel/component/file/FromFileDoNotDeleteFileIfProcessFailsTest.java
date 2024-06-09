@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -29,7 +31,7 @@ public class FromFileDoNotDeleteFileIfProcessFailsTest extends ContextTestSuppor
 
     @Test
     public void testPollFileAndShouldNotBeDeleted() throws Exception {
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "hello.txt");
 
         MockEndpoint mock = getMockEndpoint("mock:error");
         // it could potentially retry the file on the 2nd poll and then fail
@@ -37,10 +39,10 @@ public class FromFileDoNotDeleteFileIfProcessFailsTest extends ContextTestSuppor
         // so it should be minimum message count
         mock.expectedMinimumMessageCount(1);
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         oneExchangeDone.matchesWaitTime();
 
-        // assert the file is deleted
+        // assert the file is not deleted
         assertFileExists(testFile("hello.txt"));
     }
 

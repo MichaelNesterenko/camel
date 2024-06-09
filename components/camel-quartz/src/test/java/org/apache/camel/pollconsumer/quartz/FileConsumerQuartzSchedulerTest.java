@@ -34,7 +34,7 @@ public class FileConsumerQuartzSchedulerTest extends CamelTestSupport {
     public void testQuartzScheduler() throws Exception {
         getMockEndpoint("mock:result").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         context.getRouteController().startRoute("foo");
 

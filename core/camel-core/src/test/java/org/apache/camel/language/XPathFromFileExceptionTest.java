@@ -16,9 +16,12 @@
  */
 package org.apache.camel.language;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -31,14 +34,14 @@ public class XPathFromFileExceptionTest extends ContextTestSupport {
         getMockEndpoint("mock:result").expectedMessageCount(1);
         getMockEndpoint("mock:error").expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "<hello>world!</hello>", Exchange.FILE_NAME, "hello.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "<hello>world!</hello>", Exchange.FILE_NAME, "hello.xml");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
-        oneExchangeDone.matchesWaitTime();
-
-        assertFileNotExists(testFile("hello.xml"));
-        assertFileExists(testFile("ok/hello.xml"));
+        Awaitility.await().untilAsserted(() -> {
+            assertFileNotExists(testFile("hello.xml"));
+            assertFileExists(testFile("ok/hello.xml"));
+        });
     }
 
     @Test
@@ -47,14 +50,14 @@ public class XPathFromFileExceptionTest extends ContextTestSupport {
         getMockEndpoint("mock:error").expectedMessageCount(1);
 
         // the last tag is not ended properly
-        template.sendBodyAndHeader(fileUri(), "<hello>world!</hello", Exchange.FILE_NAME, "hello2.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "<hello>world!</hello", Exchange.FILE_NAME, "hello2.xml");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
-        oneExchangeDone.matchesWaitTime();
-
-        assertFileNotExists(testFile("hello2.xml"));
-        assertFileExists(testFile("error/hello2.xml"));
+        Awaitility.await().untilAsserted(() -> {
+            assertFileNotExists(testFile("hello2.xml"));
+            assertFileExists(testFile("error/hello2.xml"));
+        });
     }
 
     @Override

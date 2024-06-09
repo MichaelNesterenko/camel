@@ -419,7 +419,8 @@ public final class FileUtil {
                 LOG.debug("Retrying attempt {} to rename file from: {} to: {}", count, from, to);
             }
 
-            renamed = from.renameTo(to);
+            var toParent = to.getParentFile();
+            renamed = (toParent != null && (toParent.exists() || toParent.mkdirs())) && from.renameTo(to);
             if (!renamed && count > 0) {
                 try {
                     Thread.sleep(1000);

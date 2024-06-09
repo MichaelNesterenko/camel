@@ -59,8 +59,8 @@ public class FileConsumerIdempotentLoadStoreTest extends ContextTestSupport {
     @Test
     public void testIdempotentLoad() throws Exception {
         // send two files (report.txt exists already in idempotent repo)
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "report.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "report2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "report.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "report2.txt");
 
         // consume the file the first time
         MockEndpoint mock = getMockEndpoint("mock:result");

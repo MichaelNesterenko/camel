@@ -44,7 +44,7 @@ public class SplitGroupMultiXmlTokenTest extends CamelTestSupport {
         mock.message(2).body().isEqualTo("<group><order id=\"5\" xmlns=\"http:acme.com\">Groovy in Action</order></group>");
 
         String body = createBody();
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory), body, Exchange.FILE_NAME, "orders.xml");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)), body, Exchange.FILE_NAME, "orders.xml");
 
         MockEndpoint.assertIsSatisfied(context);
     }

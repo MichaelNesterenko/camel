@@ -28,7 +28,6 @@ import org.apache.camel.spi.PollingConsumerPollStrategy;
 import org.apache.camel.spi.Registry;
 import org.junit.jupiter.api.Test;
 
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,7 +64,7 @@ public class FileConsumerFileExpressionThrowExceptionTest extends ContextTestSup
             }
         });
 
-        await().atMost(2, TimeUnit.SECONDS).until(() -> LATCH.getCount() == 0);
+        assertTrue(LATCH.await(2, TimeUnit.SECONDS));
 
         // and we should rollback X number of times
         assertTrue(event.startsWith("rollback"));

@@ -16,10 +16,14 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for writing done files
@@ -33,19 +37,19 @@ public class FilerConsumerDoneFileNoopTest extends ContextTestSupport {
         // done file
         getMockEndpoint("mock:result").setResultMinimumWaitTime(50);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+
         resetMocks();
         oneExchangeDone.reset();
-
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
 
         // write the done file
-        template.sendBodyAndHeader(fileUri(), "", Exchange.FILE_NAME, "done");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "", Exchange.FILE_NAME, "done");
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // done file should be kept now
         assertFileExists(testFile("done"));

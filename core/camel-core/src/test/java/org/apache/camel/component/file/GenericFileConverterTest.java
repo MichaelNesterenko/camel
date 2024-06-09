@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -31,11 +32,6 @@ import org.junit.jupiter.api.Test;
 
 public class GenericFileConverterTest extends ContextTestSupport {
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
-
     @Test
     public void testToFile() throws Exception {
         context.addRoutes(new RouteBuilder() {
@@ -44,15 +40,14 @@ public class GenericFileConverterTest extends ContextTestSupport {
                 from(fileUri("?initialDelay=0&delay=10")).convertBodyTo(File.class).to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.message(0).body().isInstanceOf(File.class);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -63,16 +58,15 @@ public class GenericFileConverterTest extends ContextTestSupport {
                 from(fileUri("?initialDelay=0&delay=10")).convertBodyTo(String.class).to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.message(0).body().isInstanceOf(String.class);
         mock.message(0).body().isEqualTo("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -83,16 +77,15 @@ public class GenericFileConverterTest extends ContextTestSupport {
                 from(fileUri("?initialDelay=0&delay=10")).convertBodyTo(byte[].class).to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.message(0).body().isInstanceOf(byte[].class);
         mock.message(0).body(String.class).isEqualTo("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -103,16 +96,15 @@ public class GenericFileConverterTest extends ContextTestSupport {
                 from(fileUri("?initialDelay=0&delay=10")).convertBodyTo(Serializable.class).to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.message(0).body().isInstanceOf(Serializable.class);
         mock.message(0).body(String.class).isEqualTo("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -123,16 +115,15 @@ public class GenericFileConverterTest extends ContextTestSupport {
                 from(fileUri("?initialDelay=0&delay=10")).convertBodyTo(InputStream.class).to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.message(0).body().isInstanceOf(InputStream.class);
         mock.message(0).body(String.class).isEqualTo("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -149,16 +140,15 @@ public class GenericFileConverterTest extends ContextTestSupport {
                 }).to("mock:result");
             }
         });
-        context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.message(0).body().isInstanceOf(InputStreamCache.class);
         mock.message(0).body(String.class).isEqualTo("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -166,7 +156,6 @@ public class GenericFileConverterTest extends ContextTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-
                 from(fileUri("?initialDelay=0&delay=10"))
                         .noStreamCaching()
                         .convertBodyTo(InputStream.class).process(new Processor() {
@@ -178,7 +167,6 @@ public class GenericFileConverterTest extends ContextTestSupport {
                         }).to("mock:result");
             }
         });
-        context.start();
 
         // a file input stream is wrapped in a buffered so its faster
 
@@ -187,9 +175,9 @@ public class GenericFileConverterTest extends ContextTestSupport {
         mock.message(0).body().isInstanceOf(BufferedInputStream.class);
         mock.message(0).body(String.class).isEqualTo("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

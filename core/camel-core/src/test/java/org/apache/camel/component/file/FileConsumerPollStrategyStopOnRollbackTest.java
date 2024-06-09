@@ -29,14 +29,12 @@ import org.apache.camel.spi.PollingConsumerPollStrategy;
 import org.apache.camel.spi.Registry;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit test for poll strategy
  */
-@DisabledIfSystemProperty(named = "ci.env.name", matches = "github.com", disabledReason = "Flaky on Github CI")
 public class FileConsumerPollStrategyStopOnRollbackTest extends ContextTestSupport {
 
     private static int counter;
@@ -61,14 +59,14 @@ public class FileConsumerPollStrategyStopOnRollbackTest extends ContextTestSuppo
 
     @Test
     public void testStopOnRollback() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
 
         // let it run for a little while and since it fails first time we should
         // never get a message
-        mock.assertIsSatisfied(50);
+        mock.assertIsSatisfied(1000);
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> assertEquals("rollback", event));
     }

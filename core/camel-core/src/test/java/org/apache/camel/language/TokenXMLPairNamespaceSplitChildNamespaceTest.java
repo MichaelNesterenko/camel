@@ -16,6 +16,8 @@
  */
 package org.apache.camel.language;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -41,9 +43,9 @@ public class TokenXMLPairNamespaceSplitChildNamespaceTest extends ContextTestSup
                 .isEqualTo("<order id=\"4\" xmlns:foo=\"http:foo.com\" xmlns=\"http:acme.com\">DSL in Action</order>");
 
         String body = createBody();
-        template.sendBodyAndHeader(fileUri("pair"), body, Exchange.FILE_NAME, "orders.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri("pair")), body, Exchange.FILE_NAME, "orders.xml");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -61,9 +63,9 @@ public class TokenXMLPairNamespaceSplitChildNamespaceTest extends ContextTestSup
                 .isEqualTo("<order id=\"4\" xmlns:foo=\"http:foo.com\" xmlns=\"http:acme.com\">DSL in Action</order>");
 
         String body = createBody();
-        template.sendBodyAndHeader(fileUri("pair2"), body, Exchange.FILE_NAME, "orders.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri("pair2")), body, Exchange.FILE_NAME, "orders.xml");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     protected String createBody() {

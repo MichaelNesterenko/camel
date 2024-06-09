@@ -16,13 +16,16 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Isolated("This test is regularly flaky")
 public class FileProducerRenameUsingCopyTest extends ContextTestSupport {
@@ -32,17 +35,14 @@ public class FileProducerRenameUsingCopyTest extends ContextTestSupport {
         final String body = "Hello Camel";
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
-        mock.expectedFileExists(testFile("done/hello.txt"), body);
 
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "hello.txt");
 
-        // wait a bit for the file move to be completed
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
-        Awaitility.await().untilAsserted(() -> {
-            assertFileExists(testFile("done/hello.txt"));
-            assertFileNotExists(testFile("hello.txt"));
-        });
+        assertFileExists(testFile("done/hello.txt"), body);
+        assertFileNotExists(testFile("hello.txt"));
     }
 
     @Override

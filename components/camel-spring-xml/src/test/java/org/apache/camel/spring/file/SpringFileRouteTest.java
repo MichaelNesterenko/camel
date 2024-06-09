@@ -35,6 +35,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+// TODO idk where spring context is loaded from
 @ContextConfiguration(initializers = TestDirectoryContextInitializer.class)
 public class SpringFileRouteTest extends SpringRunWithTestSupport {
     protected String expectedBody = "Hello World!";

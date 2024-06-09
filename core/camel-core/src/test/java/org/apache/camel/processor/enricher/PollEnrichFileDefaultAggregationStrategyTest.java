@@ -16,18 +16,17 @@
  */
 package org.apache.camel.processor.enricher;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class PollEnrichFileDefaultAggregationStrategyTest extends ContextTestSupport {
 
-    final int ENRICH_TIMEOUT = 10_000;
+    final int ENRICH_TIMEOUT = 40_000;
     final int AWAIT_TIMEOUT = ENRICH_TIMEOUT * 2;
 
     @Test
@@ -39,13 +38,11 @@ public class PollEnrichFileDefaultAggregationStrategyTest extends ContextTestSup
         mock.expectedFileExists(testFile("enrich/.done/AAA.fin"));
         mock.expectedFileExists(testFile("enrichdata/.done/AAA.dat"));
 
-        template.sendBodyAndHeader(fileUri("enrich"), "Start", Exchange.FILE_NAME, "AAA.fin");
-        template.sendBodyAndHeader(fileUri("enrichdata"), "Big file", Exchange.FILE_NAME, "AAA.dat");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrich")), "Start", Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrichdata")), "Big file", Exchange.FILE_NAME, "AAA.dat");
 
-        Awaitility.await().atMost(Duration.ofMillis(AWAIT_TIMEOUT)).untilAsserted(() -> {
-            assertMockEndpointsSatisfied();
-            assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
-        });
+        assertMockEndpointsSatisfied(AWAIT_TIMEOUT, TimeUnit.SECONDS);
+        assertFileNotExists(testFile("enrichdata/AAA.dat.camelLock"));
     }
 
     @Override
@@ -57,7 +54,7 @@ public class PollEnrichFileDefaultAggregationStrategyTest extends ContextTestSup
                         .to("mock:start")
                         .pollEnrich(
                                 fileUri("enrichdata?initialDelay=0&delay=10&readLock=markerFile&move=.done"),
-                                10000)
+                                ENRICH_TIMEOUT)
                         .to("mock:result");
             }
         };

@@ -46,7 +46,7 @@ public class XMLTokenizeLanguageStreamingFileTest extends CamelTestSupport {
                   + "<c:child some_attr='b' anotherAttr='b'></c:child>" + "<c:child some_attr='c' anotherAttr='c'></c:child>"
                   + "<c:child some_attr='d' anotherAttr='d'></c:child>" + "</c:parent>";
 
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory), body, Exchange.FILE_NAME, "myxml.xml");
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)), body, Exchange.FILE_NAME, "myxml.xml");
 
         verify(expected);
     }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -51,15 +52,15 @@ public class FileConsumerDirectoryFilterTest extends ContextTestSupport {
         mock.expectedMessageCount(1);
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri("skipDir/"), "This is a file to be filtered",
+        template.sendBodyAndHeader(sfpUri(fileUri("skipDir/")), "This is a file to be filtered",
                 Exchange.FILE_NAME, "skipme.txt");
 
-        template.sendBodyAndHeader(fileUri("skipDir2/"), "This is a file to be filtered",
+        template.sendBodyAndHeader(sfpUri(fileUri("skipDir2/")), "This is a file to be filtered",
                 Exchange.FILE_NAME, "skipme.txt");
 
-        template.sendBodyAndHeader(fileUri("okDir/"), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("okDir/")), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // check names
         assertEquals(4, names.size());

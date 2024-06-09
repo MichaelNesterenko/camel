@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file.strategy;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -31,16 +33,14 @@ public class FileChangedReadLockZeroTimeoutTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.expectedFileExists(testFile("out/hello1.txt"));
-        template.sendBodyAndHeader(fileUri("in"), "Hello World", Exchange.FILE_NAME, "hello1.txt");
-        assertMockEndpointsSatisfied();
+        template.sendBodyAndHeader(sfpUri(fileUri("in")), "Hello World", Exchange.FILE_NAME, "hello1.txt");
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         mock.reset();
-        oneExchangeDone.reset();
         mock.expectedMessageCount(1);
         mock.expectedFileExists(testFile("out/hello2.txt"));
-        template.sendBodyAndHeader(fileUri("in"), "Hello Again World", Exchange.FILE_NAME, "hello2.txt");
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        template.sendBodyAndHeader(sfpUri(fileUri("in")), "Hello Again World", Exchange.FILE_NAME, "hello2.txt");
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

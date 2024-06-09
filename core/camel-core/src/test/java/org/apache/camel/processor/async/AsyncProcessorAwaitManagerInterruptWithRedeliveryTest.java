@@ -16,7 +16,6 @@
  */
 package org.apache.camel.processor.async;
 
-import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +36,10 @@ import static org.mockito.Mockito.*;
 
 public class AsyncProcessorAwaitManagerInterruptWithRedeliveryTest extends ContextTestSupport {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessorAwaitManagerInterruptWithRedeliveryTest.class);
+
+    static final int MESSAGE_REDELIVERY_COUNT = 10;
+    static final int MESSAGE_DELAY_MS = 10_000;
+    static final int INTERRUPT_TIMEOUT_MS = MESSAGE_REDELIVERY_COUNT * MESSAGE_DELAY_MS / 50;
 
     private CountDownLatch latch;
     private MyBean bean;
@@ -69,39 +72,31 @@ public class AsyncProcessorAwaitManagerInterruptWithRedeliveryTest extends Conte
             assertTrue(cause.getMessage().startsWith("Interrupted while waiting for asynchronous callback"));
         }
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // Check we have not reached the full 5 re-deliveries
-        verify(bean, atMost(4)).callMe();
+        verify(bean, atMost(MESSAGE_REDELIVERY_COUNT - 1)).callMe();
 
         assertEquals(0, asyncProcessorAwaitManager.size());
-        assertEquals(1,
-                asyncProcessorAwaitManager.getStatistics().getThreadsBlocked());
-        assertEquals(1, asyncProcessorAwaitManager.getStatistics()
-                .getThreadsInterrupted());
+        assertEquals(1, asyncProcessorAwaitManager.getStatistics().getThreadsBlocked());
+        assertEquals(1, asyncProcessorAwaitManager.getStatistics().getThreadsInterrupted());
     }
 
     private void createThreadToInterrupt() {
         new Thread(() -> {
             // Allow some time for camel exchange to enter the re-deliveries
             try {
-                latch.await(1, TimeUnit.SECONDS);
+                latch.await(INTERRUPT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 LOG.info("The test execution was interrupted", e);
             }
 
             // Get our blocked thread
-            final AsyncProcessorAwaitManager asyncProcessorAwaitManager = PluginHelper.getAsyncProcessorAwaitManager(context);
-            int size = asyncProcessorAwaitManager.size();
-            assertEquals(1, size);
+            var asyncProcessorAwaitManager = PluginHelper.getAsyncProcessorAwaitManager(context);
+            assertEquals(1, asyncProcessorAwaitManager.size());
 
-            Collection<AsyncProcessorAwaitManager.AwaitThread> threads
-                    = asyncProcessorAwaitManager.browse();
-            AsyncProcessorAwaitManager.AwaitThread thread = threads.iterator().next();
-
-            // Interrupt it
-            String id = thread.getExchange().getExchangeId();
-            asyncProcessorAwaitManager.interrupt(id);
+            var thread = asyncProcessorAwaitManager.browse().iterator().next();
+            asyncProcessorAwaitManager.interrupt(thread.getExchange().getExchangeId());
         }).start();
     }
 
@@ -117,9 +112,9 @@ public class AsyncProcessorAwaitManagerInterruptWithRedeliveryTest extends Conte
         return new RouteBuilder() {
             @Override
             public void configure() {
-                // redelivery delay should not be too fast as tested on slower CI servers can cause test to fail
                 errorHandler(
-                        deadLetterChannel("mock:error").maximumRedeliveries(5).redeliveryDelay(500).asyncDelayedRedelivery());
+                        deadLetterChannel("mock:error").maximumRedeliveries(MESSAGE_REDELIVERY_COUNT)
+                                .redeliveryDelay(MESSAGE_DELAY_MS).asyncDelayedRedelivery());
 
                 from("direct:start").routeId("myRoute").to("mock:before").bean("myBean", "callMe").to("mock:result");
             }

@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -37,11 +38,10 @@ public class FileConsumeHiddenDirsTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceivedInAnyOrder("Report 123", "Report 456");
 
-        template.sendBodyAndHeader(fileUri(".hidden"), "Report 123", Exchange.FILE_NAME, "report1.txt");
-        template.sendBodyAndHeader(fileUri("obvious"), "Report 456", Exchange.FILE_NAME, "report2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri(".hidden")), "Report 123", Exchange.FILE_NAME, "report1.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("obvious")), "Report 456", Exchange.FILE_NAME, "report2.txt");
 
-        assertMockEndpointsSatisfied();
-
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         Awaitility.await().untilAsserted(() -> {
             // file should be deleted
             assertFalse(Files.exists(testFile(".hidden/report1.txt")), "File should been deleted");

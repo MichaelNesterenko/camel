@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -36,7 +38,7 @@ public class FileConsumeCharsetTest extends ContextTestSupport {
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        template.sendBodyAndHeader(fileUri("?charset=UTF-8"), "Hello World \u4f60\u597d", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(fileUri("?charset=UTF-8")), "Hello World \u4f60\u597d", Exchange.FILE_NAME,
                 "report.txt");
     }
 
@@ -45,9 +47,8 @@ public class FileConsumeCharsetTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World \u4f60\u597d");
 
-        assertMockEndpointsSatisfied();
-
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // file should not exists
         assertFalse(Files.exists(testFile("report.txt")), "File should been deleted");

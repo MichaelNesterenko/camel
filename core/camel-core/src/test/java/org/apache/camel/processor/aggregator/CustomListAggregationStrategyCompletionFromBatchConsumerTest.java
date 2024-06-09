@@ -17,6 +17,7 @@
 package org.apache.camel.processor.aggregator;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -39,13 +40,13 @@ public class CustomListAggregationStrategyCompletionFromBatchConsumerTest extend
         MockEndpoint result = getMockEndpoint("mock:result");
         result.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "100", Exchange.FILE_NAME, "1.txt");
-        template.sendBodyAndHeader(fileUri(), "150", Exchange.FILE_NAME, "2.txt");
-        template.sendBodyAndHeader(fileUri(), "130", Exchange.FILE_NAME, "3.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "100", Exchange.FILE_NAME, "1.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "150", Exchange.FILE_NAME, "2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "130", Exchange.FILE_NAME, "3.txt");
 
         context.getRouteController().startRoute("foo");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // the list will be stored as the message body by default
         List<Integer> numbers = result.getExchanges().get(0).getIn().getBody(List.class);

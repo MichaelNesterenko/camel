@@ -25,7 +25,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.spi.IdempotentRepository;
 import org.apache.camel.spi.Registry;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,16 +57,15 @@ public class FileConsumerIdempotentRefTest extends ContextTestSupport {
 
     @Test
     public void testIdempotentRef() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "report.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "report.txt");
 
         // consume the file the first time
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
         mock.expectedMessageCount(1);
 
-        assertMockEndpointsSatisfied();
-
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // reset mock and set new expectations
         mock.reset();
@@ -77,9 +75,7 @@ public class FileConsumerIdempotentRefTest extends ContextTestSupport {
         Files.move(testFile("done/report.txt"), testFile("report.txt"));
 
         // should NOT consume the file again, let a bit time go
-        Awaitility.await().pollDelay(100, TimeUnit.MILLISECONDS).untilAsserted(() -> {
-            assertMockEndpointsSatisfied();
-        });
+        mock.assertIsSatisfied(1000);
 
         assertTrue(invoked, "MyIdempotentRepository should have been invoked");
     }

@@ -18,6 +18,7 @@ package org.apache.camel.component.file;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -35,9 +36,9 @@ public class FileConsumerPreMoveTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -45,17 +46,16 @@ public class FileConsumerPreMoveTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matchesWaitTime();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // reset and drop the same file again
         mock.reset();
         mock.expectedBodiesReceived("Hello Again World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello Again World", Exchange.FILE_NAME, "hello.txt");
-        assertMockEndpointsSatisfied();
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello Again World", Exchange.FILE_NAME, "hello.txt");
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

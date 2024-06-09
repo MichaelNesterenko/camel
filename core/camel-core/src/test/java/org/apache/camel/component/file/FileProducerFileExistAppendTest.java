@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -36,7 +38,7 @@ public class FileProducerFileExistAppendTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -57,7 +59,7 @@ public class FileProducerFileExistAppendTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
     }
 

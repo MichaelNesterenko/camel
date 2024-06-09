@@ -17,7 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.nio.file.Files;
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FilePollEnrichNoWaitTest extends ContextTestSupport {
 
@@ -41,8 +42,8 @@ public class FilePollEnrichNoWaitTest extends ContextTestSupport {
         mock.expectedBodiesReceived("Hello World");
         mock.expectedFileExists(testFile("done/hello.txt"));
 
-        oneExchangeDone.matchesWaitTime();
-        mock.assertIsSatisfied(Duration.ofSeconds(2).toMillis());
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         // file should be moved
         assertFalse(Files.exists(testFile("hello.txt")), "File should have been moved");

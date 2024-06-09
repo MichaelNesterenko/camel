@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -38,12 +39,12 @@ public class FileConsumeMultipleDirectoriesTest extends ContextTestSupport {
     public void testMultiDir() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Bye World", "Hello World", "Godday World");
-        String fileUri = fileUri(FILE_QUERY);
+        String fileUri = sfpUri(fileUri(FILE_QUERY));
         template.sendBodyAndHeader(fileUri, "Bye World", Exchange.FILE_NAME, "bye.txt");
         template.sendBodyAndHeader(fileUri, "Hello World", Exchange.FILE_NAME, "sub/hello.txt");
         template.sendBodyAndHeader(fileUri, "Godday World", Exchange.FILE_NAME, "sub/sub2/godday.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         Exchange exchange = mock.getExchanges().get(0);
         GenericFile<File> gf = (GenericFile<File>) exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE);

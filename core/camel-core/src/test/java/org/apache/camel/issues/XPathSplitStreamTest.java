@@ -16,6 +16,8 @@
  */
 package org.apache.camel.issues;
 
+import java.util.concurrent.TimeUnit;
+
 import org.xml.sax.InputSource;
 
 import org.apache.camel.ContextTestSupport;
@@ -43,7 +45,7 @@ public class XPathSplitStreamTest extends ContextTestSupport {
         }
         sb.append("\n</persons>");
 
-        template.sendBodyAndHeader(fileUri(), sb.toString(), Exchange.FILE_NAME, "bigfile.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), sb.toString(), Exchange.FILE_NAME, "bigfile.xml");
     }
 
     @Test
@@ -52,7 +54,7 @@ public class XPathSplitStreamTest extends ContextTestSupport {
         mock.expectedMessageCount(size);
         mock.expectsNoDuplicates().body();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

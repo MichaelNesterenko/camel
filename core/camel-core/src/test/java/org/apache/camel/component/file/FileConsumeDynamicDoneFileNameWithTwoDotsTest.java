@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -37,10 +38,10 @@ public class FileConsumeDynamicDoneFileNameWithTwoDotsTest extends ContextTestSu
         NotifyBuilder notify = new NotifyBuilder(context).whenDone(1).create();
         getMockEndpoint("mock:result").expectedBodiesReceivedInAnyOrder("input-body");
 
-        template.sendBodyAndHeader(fileUri(), "input-body", Exchange.FILE_NAME, "test.twodot.txt");
-        template.sendBodyAndHeader(fileUri(), "done-body", Exchange.FILE_NAME, "test.twodot.done");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "input-body", Exchange.FILE_NAME, "test.twodot.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "done-body", Exchange.FILE_NAME, "test.twodot.done");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         assertTrue(notify.matchesWaitTime());
 
         assertFalse(Files.exists(testFile("test.twodot.txt")), "Input file should be deleted");

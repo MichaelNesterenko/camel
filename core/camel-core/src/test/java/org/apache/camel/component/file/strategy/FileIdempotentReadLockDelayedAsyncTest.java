@@ -54,10 +54,10 @@ public class FileIdempotentReadLockDelayedAsyncTest extends ContextTestSupport {
         mock.message(0).arrives().between(0, 1400).millis();
         mock.message(1).arrives().between(0, 1400).millis();
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         assertTrue(notify.matches(10, TimeUnit.SECONDS));
 

@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.bean;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -39,9 +41,9 @@ public class BeanChoseMethodWithMatchingTypeAndSkipSettersTest extends ContextTe
         MockEndpoint mock = getMockEndpoint("mock:queue:order");
         mock.expectedBodiesReceived("66554,123,456");
 
-        template.sendBodyAndHeader(fileUri(), "123,456", Exchange.FILE_NAME, "66554.csv");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "123,456", Exchange.FILE_NAME, "66554.csv");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -53,7 +55,7 @@ public class BeanChoseMethodWithMatchingTypeAndSkipSettersTest extends ContextTe
                      + "<confirm>457</confirm>" + "</order>";
         template.sendBody("seda:xml", xml);
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

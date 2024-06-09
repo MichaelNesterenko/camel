@@ -22,7 +22,6 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class FileConsumeNoopIdempotentEnabledTest extends ContextTestSupport {
@@ -33,12 +32,9 @@ public class FileConsumeNoopIdempotentEnabledTest extends ContextTestSupport {
         // should only be able to read the file once as idempotent is true
         mock.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        // give some time to let consumer try to read the file multiple times
-        Awaitility.await().pollDelay(50, TimeUnit.MILLISECONDS).untilAsserted(() -> {
-            assertMockEndpointsSatisfied();
-        });
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

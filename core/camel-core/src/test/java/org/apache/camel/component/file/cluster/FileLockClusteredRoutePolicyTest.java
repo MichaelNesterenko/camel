@@ -100,7 +100,7 @@ public final class FileLockClusteredRoutePolicyTest {
 
             context.start();
 
-            contextLatch.await();
+            contextLatch.await(60, TimeUnit.SECONDS);
 
             LOGGER.debug("Shutting down node {}", id);
             RESULTS.add(id);

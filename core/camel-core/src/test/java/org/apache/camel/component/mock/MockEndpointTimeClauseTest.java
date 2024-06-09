@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -116,7 +117,7 @@ public class MockEndpointTimeClauseTest extends ContextTestSupport {
         executor.execute(new Runnable() {
             public void run() {
                 try {
-                    latch.await();
+                    latch.await(60, TimeUnit.SECONDS);
 
                     if (isStarted(template)) {
                         template.sendBody("direct:a", "B");

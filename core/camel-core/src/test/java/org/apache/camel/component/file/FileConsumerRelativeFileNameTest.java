@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -39,7 +41,7 @@ public class FileConsumerRelativeFileNameTest extends ContextTestSupport {
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // and expect name to contain filename-consumer-XXX.txt
         assertDirectoryEquals(testFile("filename-consumer-bye.txt").getFileName().toString(),

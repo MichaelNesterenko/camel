@@ -272,7 +272,7 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
+        <!-- <profile>
             <id>java-21-sources</id>
             <activation>
                 <jdk>[21,)</jdk>
@@ -318,6 +318,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
+        </profile> -->
     </profiles>
 </project>

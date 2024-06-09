@@ -152,7 +152,6 @@ public abstract class AbstractManagedThrottlerTest extends ManagementTestSupport
         assertEquals(10, completed.longValue());
     }
 
-    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void testThrottleAsyncExceptionVisableViaJmx() throws Exception {
         // get the stats for the route

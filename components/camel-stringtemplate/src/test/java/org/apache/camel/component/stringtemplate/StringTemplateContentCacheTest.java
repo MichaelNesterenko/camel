@@ -40,7 +40,7 @@ public class StringTemplateContentCacheTest extends CamelTestSupport {
         super.setUp();
 
         // create a tm file in the classpath as this is the tricky reloading stuff
-        template.sendBodyAndHeader("file://target/test-classes/org/apache/camel/component/stringtemplate",
+        template.sendBodyAndHeader(sfpUri("file://target/test-classes/org/apache/camel/component/stringtemplate"),
                 "Hello <headers.name>", Exchange.FILE_NAME, "hello.tm");
     }
 
@@ -58,7 +58,8 @@ public class StringTemplateContentCacheTest extends CamelTestSupport {
         mock.assertIsSatisfied();
 
         // now change content in the file in the classpath and try again
-        template.sendBodyAndHeader("file://target/test-classes/org/apache/camel/component/stringtemplate", "Bye <headers.name>",
+        template.sendBodyAndHeader(sfpUri("file://target/test-classes/org/apache/camel/component/stringtemplate"),
+                "Bye <headers.name>",
                 Exchange.FILE_NAME, "hello.tm");
 
         mock.reset();
@@ -77,7 +78,8 @@ public class StringTemplateContentCacheTest extends CamelTestSupport {
         mock.assertIsSatisfied();
 
         // now change content in the file in the classpath and try again
-        template.sendBodyAndHeader("file://target/test-classes/org/apache/camel/component/stringtemplate", "Bye <headers.name>",
+        template.sendBodyAndHeader(sfpUri("file://target/test-classes/org/apache/camel/component/stringtemplate"),
+                "Bye <headers.name>",
                 Exchange.FILE_NAME, "hello.tm");
 
         mock.reset();
@@ -97,7 +99,8 @@ public class StringTemplateContentCacheTest extends CamelTestSupport {
         mock.assertIsSatisfied();
 
         // now change content in the file in the classpath and try again
-        template.sendBodyAndHeader("file://target/test-classes/org/apache/camel/component/stringtemplate", "Bye <headers.name>",
+        template.sendBodyAndHeader(sfpUri("file://target/test-classes/org/apache/camel/component/stringtemplate"),
+                "Bye <headers.name>",
                 Exchange.FILE_NAME, "hello.tm");
 
         mock.reset();
@@ -117,7 +120,8 @@ public class StringTemplateContentCacheTest extends CamelTestSupport {
         mock.reset();
         // we expect that the new resource will be set as the cached value, since the cache has been cleared
         mock.expectedBodiesReceived("Bye Paris");
-        template.sendBodyAndHeader("file://target/test-classes/org/apache/camel/component/stringtemplate", "Bye <headers.name>",
+        template.sendBodyAndHeader(sfpUri("file://target/test-classes/org/apache/camel/component/stringtemplate"),
+                "Bye <headers.name>",
                 Exchange.FILE_NAME, "hello.tm");
         template.sendBodyAndHeader("direct:b", "Body", "name", "Paris");
         mock.assertIsSatisfied();
@@ -125,7 +129,7 @@ public class StringTemplateContentCacheTest extends CamelTestSupport {
         mock.reset();
         // we expect that the cached value will not be replaced by a different resource since the cache is now re-established
         mock.expectedBodiesReceived("Bye Paris");
-        template.sendBodyAndHeader("file://target/test-classes/org/apache/camel/component/stringtemplate",
+        template.sendBodyAndHeader(sfpUri("file://target/test-classes/org/apache/camel/component/stringtemplate"),
                 "Hello <headers.name>", Exchange.FILE_NAME, "hello.tm");
         template.sendBodyAndHeader("direct:b", "Body", "name", "Paris");
         mock.assertIsSatisfied();

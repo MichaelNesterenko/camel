@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -33,6 +35,7 @@ public class FileConsumeNotEagerMaxMessagesPerPollTest extends ContextTestSuppor
     public void testMaxMessagesPerPoll() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("AAA", "BBB");
+        mock.expectedPropertyReceived(Exchange.BATCH_SIZE, 2);
 
         template.sendBodyAndHeader(fileUri(), "CCC", Exchange.FILE_NAME, "ccc.FileConsumeNotEagerMaxMessagesPerPollTest.txt");
         template.sendBodyAndHeader(fileUri(), "AAA", Exchange.FILE_NAME, "aaa.FileConsumeNotEagerMaxMessagesPerPollTest.txt");
@@ -41,15 +44,13 @@ public class FileConsumeNotEagerMaxMessagesPerPollTest extends ContextTestSuppor
         // start route
         context.getRouteController().startRoute("foo");
 
-        mock.expectedPropertyReceived(Exchange.BATCH_SIZE, 2);
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         mock.reset();
         mock.expectedBodiesReceived("CCC");
         mock.expectedPropertyReceived(Exchange.BATCH_SIZE, 1);
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

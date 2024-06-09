@@ -23,7 +23,6 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.NotifyBuilder;
 import org.apache.camel.builder.RouteBuilder;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -51,12 +50,11 @@ public class FileConsumeDoneFileIssueTest extends ContextTestSupport {
 
         context.getRouteController().startRoute("foo");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         assertTrue(notify.matchesWaitTime());
 
         // the done file should be deleted
-        Awaitility.await().atLeast(50, TimeUnit.MILLISECONDS).untilAsserted(
-                () -> assertFalse(Files.exists(testFile("done/foo.done")), "Done file should be deleted"));
+        assertFalse(Files.exists(testFile("done/foo.done")), "Done file should be deleted");
     }
 
     @Test
@@ -78,12 +76,11 @@ public class FileConsumeDoneFileIssueTest extends ContextTestSupport {
 
         context.getRouteController().startRoute("bar");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         assertTrue(notify.matchesWaitTime());
 
         // the done file should be deleted
-        Awaitility.await().atLeast(50, TimeUnit.MILLISECONDS).untilAsserted(
-                () -> assertFalse(Files.exists(testFile("done2/a.txt.done")), "Done file should be deleted"));
+        assertFalse(Files.exists(testFile("done2/a.txt.done")), "Done file should be deleted");
 
         // the done file should be deleted
         assertFalse(Files.exists(testFile("done2/b.txt.done")), "Done file should be deleted");
@@ -110,12 +107,11 @@ public class FileConsumeDoneFileIssueTest extends ContextTestSupport {
 
         context.getRouteController().startRoute("bar");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         assertTrue(notify.matchesWaitTime());
 
         // the done file should be deleted
-        Awaitility.await().atLeast(50, TimeUnit.MILLISECONDS).untilAsserted(
-                () -> assertFalse(Files.exists(testFile("done2/$a$.txt.done")), "Done file should be deleted"));
+        assertFalse(Files.exists(testFile("done2/$a$.txt.done")), "Done file should be deleted");
 
         assertFalse(Files.exists(testFile("done2/$b.txt.done")), "Done file should be deleted");
         assertFalse(Files.exists(testFile("done2/c$.txt.done")), "Done file should be deleted");

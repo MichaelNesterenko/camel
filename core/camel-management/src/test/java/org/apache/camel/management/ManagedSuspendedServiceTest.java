@@ -49,25 +49,21 @@ public class ManagedSuspendedServiceTest extends ManagementTestSupport {
 
         ObjectName on = set.iterator().next();
 
-        boolean registered = mbeanServer.isRegistered(on);
-        assertTrue(registered, "Should be registered");
-        Boolean ss = (Boolean) mbeanServer.getAttribute(on, "SupportSuspension");
-        assertTrue(ss);
-        Boolean suspended = (Boolean) mbeanServer.getAttribute(on, "Suspended");
-        assertFalse(suspended);
+        assertTrue(mbeanServer.isRegistered(on), "Should be registered");
+        assertTrue((Boolean) mbeanServer.getAttribute(on, "SupportSuspension"));
+        assertFalse((Boolean) mbeanServer.getAttribute(on, "Suspended"));
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Bye World", Exchange.FILE_NAME, "bye.txt");
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
             // now its suspended by the policy
-            Boolean bool = (Boolean) mbeanServer.getAttribute(on, "Suspended");
-            assertTrue(bool);
+            assertTrue((Boolean) mbeanServer.getAttribute(on, "Suspended"));
         });
 
         // the route is suspended by the policy so we should only receive one
@@ -82,10 +78,9 @@ public class ManagedSuspendedServiceTest extends ManagementTestSupport {
         // now resume it
         mbeanServer.invoke(on, "resume", null, null);
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
-        suspended = (Boolean) mbeanServer.getAttribute(on, "Suspended");
-        assertFalse(suspended);
+        assertFalse((Boolean) mbeanServer.getAttribute(on, "Suspended"));
 
         await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
             // and the file is now deleted

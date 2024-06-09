@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
  */
 public class FilerProducerFileNamesTest extends ContextTestSupport {
 
-    // START SNIPPET: e1
     @Test
     public void testProducerWithMessageIdAsFileName() throws Exception {
         Endpoint endpoint = context.getEndpoint("direct:report");
@@ -60,6 +59,5 @@ public class FilerProducerFileNamesTest extends ContextTestSupport {
             }
         };
     }
-    // END SNIPPET: e1
 
 }

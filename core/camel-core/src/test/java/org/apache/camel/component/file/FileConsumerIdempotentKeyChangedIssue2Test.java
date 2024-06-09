@@ -22,8 +22,9 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FileConsumerIdempotentKeyChangedIssue2Test extends ContextTestSupport {
 
@@ -37,18 +38,15 @@ public class FileConsumerIdempotentKeyChangedIssue2Test extends ContextTestSuppo
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
-        oneExchangeDone.matches(5, TimeUnit.SECONDS);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(oneExchangeDone.matchesWaitTime());
 
         resetMocks();
         getMockEndpoint("mock:file").expectedBodiesReceived("Hello World Again");
 
-        // wait a bit to allow the consumer to poll once and see a non-changed
-        // file
-        Awaitility.await().pollDelay(250, TimeUnit.MILLISECONDS).untilAsserted(() -> {
-            template.sendBodyAndHeader(endpoint, "Hello World Again", Exchange.FILE_NAME, "hello.txt");
-            assertMockEndpointsSatisfied();
-        });
+        template.sendBodyAndHeader(endpoint, "Hello World Again", Exchange.FILE_NAME, "hello.txt");
+
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -56,8 +54,8 @@ public class FileConsumerIdempotentKeyChangedIssue2Test extends ContextTestSuppo
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                endpoint = endpoint(fileUri("?noop=true&initialDelay=0&delay=100"
-                                            + "&idempotentKey=${file:name}-${file:size}-${file:modified}"));
+                endpoint = endpoint(sfpUri(fileUri("?noop=true&initialDelay=0&delay=100"
+                                                   + "&idempotentKey=${file:name}-${file:size}-${file:modified}")));
 
                 from(endpoint).noAutoStartup().convertBodyTo(String.class).to("log:file").to("mock:file");
             }

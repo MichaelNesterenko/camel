@@ -35,7 +35,7 @@ public class FileSplitStreamingWithChoiceTest extends ContextTestSupport {
         mock.expectedFileExists(testFile(".camel/splitme.txt"));
 
         String body = "line1" + LS + "line2" + LS + "line3";
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "splitme.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "splitme.txt");
 
         assertMockEndpointsSatisfied();
     }

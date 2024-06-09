@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -34,9 +36,9 @@ public class FromFileMoveDoneCustomHeaderTest extends ContextTestSupport {
         mock.expectedFileExists(testFile("outbox/hello.txt"));
         mock.expectedFileExists(testFile("inbox/dones/mydone.txt"));
 
-        template.sendBodyAndHeader(fileUri("inbox"), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("inbox")), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

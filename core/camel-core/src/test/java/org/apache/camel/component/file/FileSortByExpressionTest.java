@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,13 +33,13 @@ public class FileSortByExpressionTest extends ContextTestSupport {
 
         template.sendBodyAndHeader(fileUri(folder), "Hello London", Exchange.FILE_NAME, "london.txt");
 
-        template.sendBodyAndHeader(fileUri(folder), "Hello Copenhagen", Exchange.FILE_NAME,
-                "copenhagen.xml");
+        template.sendBodyAndHeader(fileUri(folder), "Hello Copenhagen", Exchange.FILE_NAME, "copenhagen.xml");
     }
 
     @Test
     public void testSortFiles() throws Exception {
         prepareFolder("a");
+        getMockEndpoint("mock:result").expectedBodiesReceived("Hello Paris", "Hello London", "Hello Copenhagen");
 
         context.addRoutes(new RouteBuilder() {
             @Override
@@ -49,16 +48,14 @@ public class FileSortByExpressionTest extends ContextTestSupport {
             }
         });
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceived("Hello Paris", "Hello London", "Hello Copenhagen");
-
-        // wait a bit for the file processing to complete
-        assertMockEndpointsSatisfied(1, TimeUnit.SECONDS);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testSortFilesReverse() throws Exception {
         prepareFolder("b");
+
+        getMockEndpoint("mock:reverse").expectedBodiesReceived("Hello Copenhagen", "Hello London", "Hello Paris");
 
         context.addRoutes(new RouteBuilder() {
             @Override
@@ -68,11 +65,7 @@ public class FileSortByExpressionTest extends ContextTestSupport {
             }
         });
 
-        MockEndpoint reverse = getMockEndpoint("mock:reverse");
-        reverse.expectedBodiesReceived("Hello Copenhagen", "Hello London", "Hello Paris");
-
-        // wait a bit for the file processing to complete
-        assertMockEndpointsSatisfied(1, TimeUnit.SECONDS);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

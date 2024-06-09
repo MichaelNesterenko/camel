@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -57,7 +58,7 @@ public class FileMarkerFileRecursiveFilterDeleteOldLockFilesTest extends Context
         // start the route
         context.getRouteController().startRoute("foo");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // the lock files should be gone
         assertFileNotExists(testFile("hello.txt." + FileComponent.DEFAULT_LOCK_FILE_POSTFIX));

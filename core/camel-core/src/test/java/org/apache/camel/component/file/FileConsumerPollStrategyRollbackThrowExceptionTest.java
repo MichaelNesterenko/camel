@@ -28,7 +28,6 @@ import org.apache.camel.spi.PollingConsumerPollStrategy;
 import org.apache.camel.spi.Registry;
 import org.junit.jupiter.api.Test;
 
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -59,9 +58,9 @@ public class FileConsumerPollStrategyRollbackThrowExceptionTest extends ContextT
 
     @Test
     public void testRollbackThrowException() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        await().atMost(2, TimeUnit.SECONDS).until(() -> LATCH.getCount() == 0);
+        assertTrue(LATCH.await(2, TimeUnit.SECONDS));
 
         // and we should rollback X number of times
         assertTrue(event.startsWith("rollback"));

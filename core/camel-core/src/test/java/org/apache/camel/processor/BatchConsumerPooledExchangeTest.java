@@ -29,13 +29,11 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.impl.engine.PooledExchangeFactory;
 import org.apache.camel.impl.engine.PooledProcessorExchangeFactory;
-import org.apache.camel.spi.PooledObjectFactory;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BatchConsumerPooledExchangeTest extends ContextTestSupport {
 
@@ -55,17 +53,9 @@ public class BatchConsumerPooledExchangeTest extends ContextTestSupport {
         return camelContext;
     }
 
-    @Override
-    @BeforeEach
-    public void setUp() throws Exception {
-        super.setUp();
-        template.sendBodyAndHeader(fileUri(), "aaa", Exchange.FILE_NAME, "aaa.BatchConsumerPooledExchangeTest.txt");
-        template.sendBodyAndHeader(fileUri(), "bbb", Exchange.FILE_NAME, "bbb.BatchConsumerPooledExchangeTest.txt");
-        template.sendBodyAndHeader(fileUri(), "ccc", Exchange.FILE_NAME, "ccc.BatchConsumerPooledExchangeTest.txt");
-    }
-
     @Test
     public void testNotSameExchange() throws Exception {
+        var finishEvent = event().whenCompleted(3).create();
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(3);
         mock.expectedPropertyValuesReceivedInAnyOrder("myprop", 1, 3, 5);
@@ -74,18 +64,18 @@ public class BatchConsumerPooledExchangeTest extends ContextTestSupport {
         mock.message(1).header("first").isNull();
         mock.message(2).header("first").isNull();
 
-        context.getRouteController().startAllRoutes();
+        template.sendBodyAndHeader(sfpUri(fileUri()), "aaa", Exchange.FILE_NAME, "aaa.BatchConsumerPooledExchangeTest.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "bbb", Exchange.FILE_NAME, "bbb.BatchConsumerPooledExchangeTest.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "ccc", Exchange.FILE_NAME, "ccc.BatchConsumerPooledExchangeTest.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(finishEvent.matchesWaitTime());
 
-        Awaitility.waitAtMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-            PooledObjectFactory.Statistics stat
-                    = context.getCamelContextExtension().getExchangeFactoryManager().getStatistics();
-            assertEquals(1, stat.getCreatedCounter());
-            assertEquals(2, stat.getAcquiredCounter());
-            assertEquals(3, stat.getReleasedCounter());
-            assertEquals(0, stat.getDiscardedCounter());
-        });
+        var stat = context.getCamelContextExtension().getExchangeFactoryManager().getStatistics();
+        assertEquals(1, stat.getCreatedCounter());
+        assertEquals(2, stat.getAcquiredCounter());
+        assertEquals(3, stat.getReleasedCounter());
+        assertEquals(0, stat.getDiscardedCounter());
     }
 
     @Override
@@ -94,7 +84,7 @@ public class BatchConsumerPooledExchangeTest extends ContextTestSupport {
             @Override
             public void configure() throws Exception {
                 // maxMessagesPerPoll=1 to force polling 3 times to use pooled exchanges
-                from(fileUri("?initialDelay=0&delay=10&maxMessagesPerPoll=1")).noAutoStartup()
+                from(fileUri("?initialDelay=0&delay=10&maxMessagesPerPoll=1"))
                         .setProperty("myprop", counter::incrementAndGet)
                         .setHeader("myheader", counter::incrementAndGet)
                         .process(new Processor() {

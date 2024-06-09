@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.xslt;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -31,9 +33,9 @@ public class XsltFromFileExceptionTest extends ContextTestSupport {
         getMockEndpoint("mock:result").expectedMessageCount(1);
         getMockEndpoint("mock:error").expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "<hello>world!</hello>", Exchange.FILE_NAME, "hello.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "<hello>world!</hello>", Exchange.FILE_NAME, "hello.xml");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         oneExchangeDone.matchesWaitTime();
 
@@ -49,7 +51,7 @@ public class XsltFromFileExceptionTest extends ContextTestSupport {
         // the last tag is not ended properly
         template.sendBodyAndHeader(fileUri(), "<hello>world!</hello", Exchange.FILE_NAME, "hello2.xml");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         oneExchangeDone.matchesWaitTime();
 

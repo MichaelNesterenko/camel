@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Endpoint;
@@ -42,14 +43,13 @@ public class FileConsumerBeginAndCommitExpressionRenameStrategyTest extends Cont
         mock.expectedBodiesReceived("Hello Paris");
         mock.expectedFileExists(testFile("done/paris.bak"), "Hello Paris");
 
-        template.sendBodyAndHeader(fileUri("reports"), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("reports")), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
     public void testIllegalOptions() {
-
         Endpoint ep = context.getEndpoint(fileUri("?move=../done/${file:name}&delete=true"));
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> ep.createConsumer(exchange -> {

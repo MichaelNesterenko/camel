@@ -16,12 +16,12 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Test;
-
-import static org.awaitility.Awaitility.await;
 
 /**
  * Unit test that file consumer will exclude pre and postfixes
@@ -34,11 +34,11 @@ public class FileConsumerExcludeNameTest extends ContextTestSupport {
 
         prepareFiles();
 
-        await().untilAsserted(() -> assertMockEndpointsSatisfied());
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     private void prepareFiles() throws Exception {
-        String url = fileUri();
+        String url = sfpUri(fileUri());
         template.sendBodyAndHeader(url, "Hello World", Exchange.FILE_NAME, "hello.xml");
         template.sendBodyAndHeader(url, "Reports1", Exchange.FILE_NAME, "report1.txt");
         template.sendBodyAndHeader(url, "Bye World", Exchange.FILE_NAME, "secret.txt");

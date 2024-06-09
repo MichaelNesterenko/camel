@@ -16,6 +16,8 @@
  */
 package org.apache.camel.issues;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -31,10 +33,10 @@ public class RecipientListUseOriginalMessageIssueTest extends ContextTestSupport
     public void testRecipientListUseOriginalMessageIssue() throws Exception {
         getMockEndpoint("mock:error").expectedMinimumMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri("inbox"), "A", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(fileUri("inbox")), "A", Exchange.FILE_NAME,
                 "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         assertFileExists(testFile("outbox/hello.txt"), "A");
     }

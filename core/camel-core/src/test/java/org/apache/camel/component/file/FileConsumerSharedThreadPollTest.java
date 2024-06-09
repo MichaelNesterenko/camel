@@ -17,6 +17,7 @@
 package org.apache.camel.component.file;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -40,10 +41,10 @@ public class FileConsumerSharedThreadPollTest extends ContextTestSupport {
         // thread thread name should be the same
         mock.message(0).header("threadName").isEqualTo(mock.message(1).header("threadName"));
 
-        template.sendBodyAndHeader(fileUri("a"), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri("b"), "Bye World", Exchange.FILE_NAME, "bye.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("a")), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("b")), "Bye World", Exchange.FILE_NAME, "bye.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

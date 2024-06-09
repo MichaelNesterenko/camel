@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -41,9 +43,9 @@ public class FileConsumerAbsoluteRootPathDefaultMoveTest extends ContextTestSupp
         mock.expectedBodiesReceived("Hello Paris");
         mock.expectedFileExists(base + "/.camel/paris.txt");
 
-        template.sendBodyAndHeader("file:" + base, "Hello Paris", Exchange.FILE_NAME, "paris.txt");
+        template.sendBodyAndHeader(sfpUri("file:" + base), "Hello Paris", Exchange.FILE_NAME, "paris.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

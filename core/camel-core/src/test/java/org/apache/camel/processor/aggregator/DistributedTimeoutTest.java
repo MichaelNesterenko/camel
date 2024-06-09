@@ -16,6 +16,7 @@
  */
 package org.apache.camel.processor.aggregator;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,18 +25,18 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.processor.aggregate.MemoryAggregationRepository;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DistributedTimeoutTest extends AbstractDistributedTest {
 
     private MemoryAggregationRepository sharedAggregationRepository = new MemoryAggregationRepository(true);
 
     private final AtomicInteger invoked = new AtomicInteger();
+    private final CountDownLatch timeoutLatch = new CountDownLatch(1);
     private volatile Exchange receivedExchange;
     private volatile int receivedIndex;
     private volatile int receivedTotal;
@@ -51,11 +52,8 @@ public class DistributedTimeoutTest extends AbstractDistributedTest {
         template.sendBodyAndHeader("direct:start", "A", "id", 123);
         template2.sendBodyAndHeader("direct:start", "B", "id", 123);
 
-        // wait a bit until the timeout was triggered
-        await().atMost(2, TimeUnit.SECONDS).until(() -> invoked.get() == 1);
-
-        mock.assertIsSatisfied();
-        mock2.assertIsSatisfied();
+        assertTrue(timeoutLatch.await(60, TimeUnit.SECONDS));
+        assertEquals(1, invoked.get());
 
         assertNotNull(receivedExchange);
         assertEquals("AB", receivedExchange.getIn().getBody());
@@ -73,11 +71,7 @@ public class DistributedTimeoutTest extends AbstractDistributedTest {
         template2.sendBodyAndHeader("direct:start", "B", "id", 123);
         template2.sendBodyAndHeader("direct:start", "C", "id", 123);
 
-        Awaitility.await().untilAsserted(() -> {
-            // should complete before timeout
-            mock2.assertIsSatisfied(500);
-            mock.assertIsSatisfied(500);
-        });
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         // should have not invoked the timeout method anymore
         assertEquals(1, invoked.get());
@@ -101,6 +95,7 @@ public class DistributedTimeoutTest extends AbstractDistributedTest {
         @Override
         public void timeout(Exchange oldExchange, int index, int total, long timeout) {
             invoked.incrementAndGet();
+            timeoutLatch.countDown();
 
             // we can't assert on the expected values here as the contract of
             // this method doesn't

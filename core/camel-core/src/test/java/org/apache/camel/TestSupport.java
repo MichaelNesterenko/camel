@@ -60,6 +60,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ResourceLock(value = Resources.SYSTEM_PROPERTIES, mode = ResourceAccessMode.READ)
 public abstract class TestSupport {
 
+    private static final java.util.regex.Pattern FILE_ENDPOINT_URI
+            = java.util.regex.Pattern.compile("file:(?<path>[^?]+)(?<query>\\?.+)?$");
+
     protected static final String LS = System.lineSeparator();
     private static final Logger LOG = LoggerFactory.getLogger(TestSupport.class);
 
@@ -69,6 +72,8 @@ public abstract class TestSupport {
 
     @TempDir
     private Path tempDirectory;
+    @TempDir
+    private Path safePublicationStagingDirectory;
 
     @Override
     public String toString() {
@@ -168,6 +173,29 @@ public abstract class TestSupport {
 
     protected String fileUri(Path directory, String query) {
         return "file:" + directory + (query.startsWith("?") ? "" : "/") + query;
+    }
+
+    /**
+     * Forces file to be created in a separate staging directory before moving into the target directory
+     *
+     * @param  uri original file uri
+     * @return     amended file uri with {@code tempPrefix} appended to the uri
+     */
+    protected String sfpUri(String uri) {
+        return sfpUri(uri, "");
+    }
+
+    protected String sfpUri(String uri, String prefix) {
+        var matcher = FILE_ENDPOINT_URI.matcher(uri);
+
+        if (!matcher.matches()) {
+            throw new IllegalStateException("unable to create safe publication uri from: " + uri);
+        }
+
+        return uri +
+               (matcher.group("query") == null ? "?" : "&") +
+               "tempPrefix=" + prefix + Path.of(matcher.group("path")).relativize(safePublicationStagingDirectory)
+               + File.separator;
     }
 
     protected boolean canRunOnThisPlatform() {

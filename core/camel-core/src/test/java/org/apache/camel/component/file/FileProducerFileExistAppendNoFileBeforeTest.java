@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -31,8 +33,9 @@ public class FileProducerFileExistAppendNoFileBeforeTest extends ContextTestSupp
         mock.expectedFileExists(testFile("hello.txt"), "Bye World");
 
         template.sendBodyAndHeader(fileUri("?fileExist=Append"), "Bye World", Exchange.FILE_NAME, "hello.txt");
+        context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -40,7 +43,8 @@ public class FileProducerFileExistAppendNoFileBeforeTest extends ContextTestSupp
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from(fileUri("?noop=true&initialDelay=100&delay=10")).convertBodyTo(String.class).to("mock:result");
+                from(fileUri("?noop=true&initialDelay=100&delay=10")).noAutoStartup()
+                        .convertBodyTo(String.class).to("mock:result");
             }
         };
     }

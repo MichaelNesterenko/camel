@@ -28,12 +28,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@DisabledOnOs(OS.WINDOWS)
+@Isolated
 public class ThrottlerMethodCallTest extends ContextTestSupport {
     private static final Logger LOG = LoggerFactory.getLogger(ThrottlerMethodCallTest.class);
     private static final int INTERVAL = 100;

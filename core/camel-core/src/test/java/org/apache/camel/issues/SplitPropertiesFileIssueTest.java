@@ -18,6 +18,7 @@ package org.apache.camel.issues;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -35,16 +36,14 @@ public class SplitPropertiesFileIssueTest extends ContextTestSupport {
     public void testSplitPropertiesFileAndRoute() throws Exception {
         MockEndpoint foo = getMockEndpoint("mock:foo");
         foo.expectedBodiesReceived("[foo=1, foo=4]");
-
         // after the file is routed it should be moved to done
         foo.expectedFileExists(testFile("done/myprop.txt"), body);
 
-        MockEndpoint bar = getMockEndpoint("mock:bar");
-        bar.expectedBodiesReceived("[bar=2, bar=3]");
+        getMockEndpoint("mock:bar").expectedBodiesReceived("[bar=2, bar=3]");
 
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "myprop.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "myprop.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

@@ -16,6 +16,8 @@
  */
 package org.apache.camel.processor.intercept;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -33,9 +35,9 @@ public class FromFileInterceptSendToIssue extends ContextTestSupport {
         mock.expectedMessageCount(1);
         mock.expectedPropertyReceived(Exchange.INTERCEPTED_ENDPOINT, "seda://foo");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "input.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "input.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         Exchange exchange = mock.getReceivedExchanges().get(0);
         assertTrue(exchange.getFromEndpoint().getEndpointUri().startsWith(fileUri()));

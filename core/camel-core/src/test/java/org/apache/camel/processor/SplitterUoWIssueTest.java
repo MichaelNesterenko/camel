@@ -16,6 +16,8 @@
  */
 package org.apache.camel.processor;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -28,9 +30,9 @@ public class SplitterUoWIssueTest extends ContextTestSupport {
         getMockEndpoint("mock:foo").expectedBodiesReceived("A", "B", "C", "D", "E");
         getMockEndpoint("mock:result").expectedBodiesReceived("A,B,C,D,E");
 
-        template.sendBodyAndHeader(fileUri(), "A,B,C,D,E", Exchange.FILE_NAME, "splitme.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "A,B,C,D,E", Exchange.FILE_NAME, "splitme.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -38,10 +40,10 @@ public class SplitterUoWIssueTest extends ContextTestSupport {
         getMockEndpoint("mock:foo").expectedBodiesReceived("A", "B", "C", "D", "E", "F", "G", "H", "I");
         getMockEndpoint("mock:result").expectedBodiesReceived("A,B,C,D,E", "F,G,H,I");
 
-        template.sendBodyAndHeader(fileUri(), "A,B,C,D,E", Exchange.FILE_NAME, "a.txt");
-        template.sendBodyAndHeader(fileUri(), "F,G,H,I", Exchange.FILE_NAME, "b.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "A,B,C,D,E", Exchange.FILE_NAME, "a.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "F,G,H,I", Exchange.FILE_NAME, "b.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

@@ -16,6 +16,9 @@
  */
 package org.apache.camel.processor;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.AggregationStrategy;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+// TODO semantically equivalent with MulticastParallelStreamingTimeoutTest, needs unification
 public class MulticastParallelStreamingTest extends ContextTestSupport {
 
     @Test
@@ -35,7 +39,7 @@ public class MulticastParallelStreamingTest extends ContextTestSupport {
 
         template.sendBody("direct:start", "Hello");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -53,7 +57,7 @@ public class MulticastParallelStreamingTest extends ContextTestSupport {
             template.sendBody("direct:start", "Hello");
         }
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -61,23 +65,33 @@ public class MulticastParallelStreamingTest extends ContextTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start").multicast(new AggregationStrategy() {
-                    public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
-                        if (oldExchange == null) {
-                            return newExchange;
-                        }
+                from("direct:start")
+                        .process(this::setLatch)
+                        .multicast(new AggregationStrategy() {
+                            public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
+                                if (oldExchange == null) {
+                                    getLatch(newExchange).countDown();
+                                    return newExchange;
+                                }
 
-                        String body = oldExchange.getIn().getBody(String.class);
-                        oldExchange.getIn().setBody(body + newExchange.getIn().getBody(String.class));
-                        return oldExchange;
-                    }
-                }).parallelProcessing().streaming().to("direct:a", "direct:b")
-                        // use end to indicate end of multicast route
-                        .end().to("mock:result");
+                                String body = oldExchange.getIn().getBody(String.class);
+                                oldExchange.getIn().setBody(body + newExchange.getIn().getBody(String.class));
+                                return oldExchange;
+                            }
+                        }).parallelProcessing().streaming().to("direct:a", "direct:b").end()
+                        .to("mock:result");
 
-                from("direct:a").delay(250).asyncDelayed().setBody(constant("A"));
+                from("direct:a").process(e -> getLatch(e).await(60, TimeUnit.SECONDS)).setBody(constant("A"));
 
                 from("direct:b").setBody(constant("B"));
+            }
+
+            private void setLatch(Exchange exchange) {
+                exchange.setProperty("orderingLatch", new CountDownLatch(1));
+            }
+
+            private CountDownLatch getLatch(Exchange exchange) {
+                return exchange.getProperty("orderingLatch", CountDownLatch.class);
             }
         };
     }

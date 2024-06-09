@@ -16,6 +16,9 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -28,21 +31,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FromFilePollThirdTimeOkTest extends ContextTestSupport {
 
-    private static int counter;
+    private AtomicInteger counter = new AtomicInteger();
     private String body = "Hello World this file will be deleted";
 
     @Test
     public void testPollFileAndShouldBeDeletedAtThirdPoll() throws Exception {
         NotifyBuilder notify = new NotifyBuilder(context).whenDone(3).create();
 
-        template.sendBodyAndHeader(fileUri(), body, Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), body, Exchange.FILE_NAME, "hello.txt");
         context.getRouteController().startRoute("FromFilePollThirdTimeOkTest");
 
         getMockEndpoint("mock:result").expectedBodiesReceived(body);
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         assertTrue(notify.matchesWaitTime());
-        assertEquals(3, counter);
+        assertEquals(3, counter.get());
 
         // assert the file is deleted
         assertFileNotExists(testFile("hello.txt"));
@@ -55,8 +58,7 @@ public class FromFilePollThirdTimeOkTest extends ContextTestSupport {
                 from(fileUri("?delete=true&initialDelay=0&delay=10")).noAutoStartup()
                         .routeId("FromFilePollThirdTimeOkTest").process(new Processor() {
                             public void process(Exchange exchange) throws Exception {
-                                counter++;
-                                if (counter < 3) {
+                                if (counter.incrementAndGet() < 3) {
                                     // file should exists
                                     assertFileExists(testFile("hello.txt"));
                                     throw new IllegalArgumentException("Forced by unittest");

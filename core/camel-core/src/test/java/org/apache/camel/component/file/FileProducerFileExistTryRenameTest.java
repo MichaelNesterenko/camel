@@ -16,15 +16,14 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
-@DisabledOnOs(OS.WINDOWS)
 public class FileProducerFileExistTryRenameTest extends ContextTestSupport {
 
     @Test
@@ -33,13 +32,13 @@ public class FileProducerFileExistTryRenameTest extends ContextTestSupport {
         mock.expectedBodiesReceived("Bye World");
         mock.expectedFileExists(testFile("hello.txt"), "Bye World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri("?fileExist=TryRename&tempPrefix=tmp"), "Bye World",
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("?fileExist=TryRename&tempPrefix=tmp")), "Bye World",
                 Exchange.FILE_NAME, "hello.txt");
 
         context.getRouteController().startAllRoutes();
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

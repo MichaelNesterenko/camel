@@ -35,7 +35,7 @@ public class FileConsumerSpringSchedulerTest extends ContextTestSupport {
     public void testSpringScheduler() throws Exception {
         getMockEndpoint("mock:result").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
         context.getRouteController().startRoute("foo");
 

@@ -17,6 +17,7 @@
 package org.apache.camel.component.mapstruct;
 
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.camel.CamelContext;
@@ -57,7 +58,8 @@ public class DefaultMapStructFinder extends ServiceSupport implements MapStructM
         final AtomicInteger answer = new AtomicInteger();
         try {
             // is there a generated mapper
-            final Object mapper = Mappers.getMapper(clazz);
+            var mapper = Objects.requireNonNullElseGet(getCamelContext().getRegistry().findSingleByType(clazz),
+                    () -> Mappers.getMapper(clazz));
             if (mapper != null) {
                 ReflectionHelper.doWithMethods(mapper.getClass(), mc -> {
                     // must be public

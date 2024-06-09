@@ -16,9 +16,12 @@
  */
 package org.apache.camel.language;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,14 +33,13 @@ public class TokenPairPredicateTest extends ContextTestSupport {
     public void testTokenPairPredicate() throws Exception {
         getMockEndpoint("mock:result").expectedMessageCount(1);
 
-        template.sendBodyAndHeader(fileUri(), "<hello>world!</hello>", Exchange.FILE_NAME, "hello.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "<hello>world!</hello>", Exchange.FILE_NAME, "hello.xml");
 
-        assertMockEndpointsSatisfied();
-
-        oneExchangeDone.matchesWaitTime();
-
-        assertFileNotExists(testFile("hello.xml"));
-        assertFileExists(testFile("ok/hello.xml"));
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        Awaitility.await().untilAsserted(() -> {
+            assertFileNotExists(testFile("hello.xml"));
+            assertFileExists(testFile("ok/hello.xml"));
+        });
     }
 
     @Override

@@ -19,9 +19,11 @@ package org.apache.camel.component.file;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,22 +42,23 @@ class FileProducerCharsetUTFtoISOConfiguredTest extends ContextTestSupport {
             fos.write(DATA.getBytes(StandardCharsets.UTF_8));
         }
 
-        assertTrue(oneExchangeDone.matchesWaitTime());
+        initRoute();
 
-        assertFileExists(testFile("output.txt"));
-        byte[] data = Files.readAllBytes(testFile("output.txt"));
+        Awaitility.await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+            assertTrue(oneExchangeDone.matchesWaitTime());
 
-        assertEquals(DATA, new String(data, StandardCharsets.ISO_8859_1));
+            assertFileExists(testFile("output.txt"));
+            assertEquals(DATA, new String(Files.readAllBytes(testFile("output.txt")), StandardCharsets.ISO_8859_1));
+        });
     }
 
-    @Override
-    protected RouteBuilder createRouteBuilder() throws Exception {
-        return new RouteBuilder() {
+    private void initRoute() throws Exception {
+        context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() {
                 from(fileUri("?initialDelay=0&delay=10&charset=utf-8&fileName=input.txt"))
                         .to(fileUri("?fileName=output.txt&charset=iso-8859-1"));
             }
-        };
+        });
     }
 }

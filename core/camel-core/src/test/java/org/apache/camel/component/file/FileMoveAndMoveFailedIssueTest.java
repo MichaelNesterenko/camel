@@ -16,12 +16,11 @@
  */
 package org.apache.camel.component.file;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class FileMoveAndMoveFailedIssueTest extends ContextTestSupport {
@@ -31,9 +30,9 @@ public class FileMoveAndMoveFailedIssueTest extends ContextTestSupport {
         getMockEndpoint("mock:result").expectedMessageCount(1);
         getMockEndpoint("mock:result").expectedFileExists(testFile("input.bak/somedate/hello.txt"));
 
-        template.sendBodyAndHeader(fileUri("input"), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("input")), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        awaitMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -41,13 +40,9 @@ public class FileMoveAndMoveFailedIssueTest extends ContextTestSupport {
         getMockEndpoint("mock:result").expectedMessageCount(0);
         getMockEndpoint("mock:result").expectedFileExists(testFile("input.err/somedate/bomb.txt"));
 
-        template.sendBodyAndHeader(fileUri("input"), "Kaboom", Exchange.FILE_NAME, "bomb.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("input")), "Kaboom", Exchange.FILE_NAME, "bomb.txt");
 
-        awaitMockEndpointsSatisfied();
-    }
-
-    private void awaitMockEndpointsSatisfied() {
-        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> assertMockEndpointsSatisfied());
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

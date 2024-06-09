@@ -32,8 +32,11 @@
     <name>Camel :: LangChain :: Chat</name>
     <description>LangChain4j Chat component</description>
 
-    <dependencies>
+    <properties>
+        <camel.failsafe.forkTimeout>1800</camel.failsafe.forkTimeout>
+    </properties>
 
+    <dependencies>
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-support</artifactId>

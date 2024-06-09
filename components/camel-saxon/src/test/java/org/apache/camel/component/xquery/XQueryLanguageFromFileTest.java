@@ -43,11 +43,11 @@ public class XQueryLanguageFromFileTest extends CamelTestSupport {
         other.expectedMessageCount(1);
         other.message(0).body(String.class).contains("Bye World");
 
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory),
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)),
                 "<mail from=\"davsclaus@apache.org\"><subject>Hey</subject><body>Hello World!</body></mail>",
                 Exchange.FILE_NAME, "claus.xml");
 
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory),
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory)),
                 "<mail from=\"janstey@apache.org\"><subject>Hey</subject><body>Bye World!</body></mail>",
                 Exchange.FILE_NAME, "janstey.xml");
 

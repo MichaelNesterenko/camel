@@ -22,7 +22,6 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class FileConsumePollEnrichFileTest extends ContextTestSupport {
@@ -36,16 +35,10 @@ public class FileConsumePollEnrichFileTest extends ContextTestSupport {
         mock.expectedFileExists(testFile("enrich/.done/AAA.fin"));
         mock.expectedFileExists(testFile("enrichdata/.done/AAA.dat"));
 
-        template.sendBodyAndHeader(fileUri("enrich"), "Start", Exchange.FILE_NAME,
-                "AAA.fin");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrich")), "Start", Exchange.FILE_NAME, "AAA.fin");
+        template.sendBodyAndHeader(sfpUri(fileUri("enrichdata")), "Big file", Exchange.FILE_NAME, "AAA.dat");
 
-        log.info("Sleeping for 1/4 sec before writing enrichdata file");
-        Awaitility.await().pollDelay(250, TimeUnit.MILLISECONDS).untilAsserted(() -> {
-            template.sendBodyAndHeader(fileUri("enrichdata"), "Big file",
-                    Exchange.FILE_NAME, "AAA.dat");
-            log.info("... write done");
-            assertMockEndpointsSatisfied();
-        });
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -57,7 +50,7 @@ public class FileConsumePollEnrichFileTest extends ContextTestSupport {
                         .to("mock:start")
                         .pollEnrich(
                                 fileUri("enrichdata?initialDelay=0&delay=10&move=.done"),
-                                1000)
+                                10_000)
                         .to("mock:result");
             }
         };

@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -30,16 +32,15 @@ public class FileConsumerSkipDotFilesTest extends ContextTestSupport {
 
     @BeforeEach
     void sendDotFile() {
-        template.sendBodyAndHeader(fileUri(), "This is a dot file", Exchange.FILE_NAME, ".skipme");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "This is a dot file", Exchange.FILE_NAME, ".skipme");
     }
 
     @Test
     public void testSkipDotFiles() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
-        mock.setResultWaitTime(100);
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -47,9 +48,9 @@ public class FileConsumerSkipDotFilesTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

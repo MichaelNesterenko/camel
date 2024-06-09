@@ -72,22 +72,6 @@
             <version>${commons-io-version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- these optional dependencies are needed because exec plugin
-             doesn't obbey the plugin's dependencies and only supports
-             compile and runtime dependencies -->
-        <dependency>
-            <groupId>com.beanit</groupId>
-            <artifactId>asn1bean-compiler</artifactId>
-            <version>${asn1bean-version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>${jakarta-xml-bind-api-version}</version>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
 
     <build>
@@ -97,22 +81,15 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <id>generate-test-sources</id>
                         <phase>generate-sources</phase>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>java</goal>
                         </goals>
                         <configuration>
-                            <executable>java</executable>
+                            <mainClass>com.beanit.asn1bean.compiler.Compiler</mainClass>
                             <arguments>
-                                <argument>-classpath</argument>
-                                <classpath>
-                                    <dependency>com.beanit:asn1bean-compiler</dependency>
-                                    <dependency>com.beanit:asn1bean</dependency>
-                                    <dependency>antlr:antlr</dependency>
-                                    <dependency>javax.xml.bind:jaxb-api</dependency>
-                                </classpath>
-                                <argument>com.beanit.asn1bean.compiler.Compiler</argument>
                                 <argument>-o</argument>
                                 <argument>${basedir}/target/generated/src/test/java</argument>
                                 <argument>-p</argument>
@@ -120,11 +97,23 @@
                                 <argument>-f</argument>
                                 <argument>${basedir}/src/test/resources/asn1_structure/TestSMSCBerCdr.asn1</argument>
                             </arguments>
+                            <includePluginDependencies>true</includePluginDependencies>
                             <testSourceRoot>${basedir}/target/generated/src/test/java</testSourceRoot>
-                            <longModulepath>false</longModulepath>
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.beanit</groupId>
+                        <artifactId>asn1bean-compiler</artifactId>
+                        <version>${asn1bean-version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>jakarta.xml.bind</groupId>
+                        <artifactId>jakarta.xml.bind-api</artifactId>
+                        <version>${jakarta-xml-bind-api-version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

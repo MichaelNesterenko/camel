@@ -16,52 +16,39 @@
  */
 package org.apache.camel.component.file.stress;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
-@Disabled("Manual test")
-@DisabledOnOs(OS.WINDOWS)
-public class FileConsumerPollManyFilesManualTest extends ContextTestSupport {
+public class FileConsumerPollManyFilesTest extends ContextTestSupport {
 
     private static final int FILES = 200;
 
     @Override
-    @BeforeEach
-    public void setUp() throws Exception {
-        super.setUp();
-
-        // create files
-        for (int i = 0; i < FILES; i++) {
-            template.sendBodyAndHeader(fileUri(), "Message " + i, Exchange.FILE_NAME, "file-" + i + ".txt");
-        }
-    }
-
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
-    }
-
-    @Test
-    public void testPollManyFiles() throws Exception {
-        context.addRoutes(new RouteBuilder() {
+    protected RouteBuilder createRouteBuilder() throws Exception {
+        return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
                 from(fileUri("?delete=true")).convertBodyTo(String.class).to("mock:result");
             }
-        });
-        context.start();
+        };
+    }
 
+    @Test
+    public void testPollManyFiles() throws Exception {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(FILES);
 
-        assertMockEndpointsSatisfied();
+        // create files
+        for (int i = 0; i < FILES; i++) {
+            template.sendBodyAndHeader(sfpUri(fileUri()), "Message " + i, Exchange.FILE_NAME, "file-" + i + ".txt");
+        }
+
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
 }

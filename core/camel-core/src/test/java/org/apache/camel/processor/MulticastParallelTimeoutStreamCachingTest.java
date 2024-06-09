@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
@@ -28,6 +29,7 @@ import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.converter.stream.CachedOutputStream;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,18 +43,23 @@ public class MulticastParallelTimeoutStreamCachingTest extends ContextTestSuppor
     private static final String BODY_STRING = "message body";
     private static final byte[] BODY = BODY_STRING.getBytes(StandardCharsets.UTF_8);
 
+    static final int TASK_TIMEOUT_MS = 5_000;
+    static final int TASK_DURATION_MS = 30_000;
+    static final int TEST_TIMEOUT_MS = 60_000;
+
     @Test
     public void testCreateOutputStreamCacheAfterTimeout() throws Exception {
         getMockEndpoint("mock:x").expectedBodiesReceived(BODY_STRING);
 
         template.sendBody("direct:a", "testMessage");
-        assertMockEndpointsSatisfied();
+        awaitMocksAreSatisfied();
 
-        File f = testDirectory().toFile();
-        assertTrue(f.isDirectory());
-        Thread.sleep(500L); // deletion happens asynchron
-        File[] files = f.listFiles();
-        assertEquals(0, files.length);
+        Awaitility.await().untilAsserted(() -> {
+            File f = testDirectory().toFile();
+            assertTrue(f.isDirectory());
+            File[] files = f.listFiles();
+            assertEquals(0, files.length);
+        });
     }
 
     @Test
@@ -61,7 +68,11 @@ public class MulticastParallelTimeoutStreamCachingTest extends ContextTestSuppor
         getMockEndpoint("mock:y").expectedMessageCount(0);
 
         template.sendBody("direct:b", "testMessage");
-        assertMockEndpointsSatisfied();
+        awaitMocksAreSatisfied();
+    }
+
+    private void awaitMocksAreSatisfied() throws InterruptedException {
+        assertMockEndpointsSatisfied(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -69,8 +80,8 @@ public class MulticastParallelTimeoutStreamCachingTest extends ContextTestSuppor
         final Processor processor1 = new Processor() {
             public void process(Exchange exchange) {
                 try {
-                    // sleep for one second so that the stream cache is built after the main exchange has finished due to timeout on the multicast
-                    Thread.sleep(1000L);
+                    // sleep so that the stream cache is built after the main exchange has finished due to timeout on the multicast
+                    Thread.sleep(TASK_DURATION_MS);
                 } catch (InterruptedException e) {
                     throw new IllegalStateException("Unexpected exception", e);
                 }
@@ -87,8 +98,8 @@ public class MulticastParallelTimeoutStreamCachingTest extends ContextTestSuppor
                 // create first the OutputStreamCache and then sleep
                 CachedOutputStream outputStream = new CachedOutputStream(exchange);
                 try {
-                    // sleep for one second so that the write to the CachedOutputStream happens after the main exchange has finished due to timeout on the multicast
-                    Thread.sleep(1000L);
+                    // sleep so that the write to the CachedOutputStream happens after the main exchange has finished due to timeout on the multicast
+                    Thread.sleep(TASK_DURATION_MS);
                 } catch (InterruptedException e) {
                     throw new IllegalStateException("Unexpected exception", e);
                 }
@@ -111,11 +122,11 @@ public class MulticastParallelTimeoutStreamCachingTest extends ContextTestSuppor
 
                 onException(IOException.class).to("mock:exception");
 
-                from("direct:a").multicast().timeout(500L).parallelProcessing().to("direct:x");
+                from("direct:a").multicast().timeout(TASK_TIMEOUT_MS).parallelProcessing().to("direct:x");
 
                 from("direct:x").process(processor1).to("mock:x");
 
-                from("direct:b").multicast().timeout(500L).parallelProcessing().to("direct:y");
+                from("direct:b").multicast().timeout(TASK_TIMEOUT_MS).parallelProcessing().to("direct:y");
 
                 from("direct:y").process(processor2).to("mock:y");
             }

@@ -30,7 +30,7 @@ public class TransactionalClientDataSourceTransactedWithFileTest extends Transac
 
     @Test
     public void testTransactionSuccess() throws Exception {
-        template.sendBodyAndHeader(fileUri("okay"), "Hello World", Exchange.FILE_NAME, "okay.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("okay")), "Hello World", Exchange.FILE_NAME, "okay.txt");
 
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
             // wait for route to complete
@@ -41,7 +41,7 @@ public class TransactionalClientDataSourceTransactedWithFileTest extends Transac
 
     @Test
     public void testTransactionRollback() throws Exception {
-        template.sendBodyAndHeader(fileUri("fail"), "Hello World", Exchange.FILE_NAME, "fail.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("fail")), "Hello World", Exchange.FILE_NAME, "fail.txt");
 
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
             // should not be able to process the file so we still got 1 book as we did from the start

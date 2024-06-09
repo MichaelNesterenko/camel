@@ -39,7 +39,7 @@ public class FileToFtpTempFileNameIT extends FtpServerTestSupport {
     public void testFileToFtp() {
         NotifyBuilder notify = new NotifyBuilder(context).whenDone(1).create();
 
-        template.sendBodyAndHeader(TestSupport.fileUri(testDirectory, "in"), "Hello World", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(TestSupport.fileUri(testDirectory, "in")), "Hello World", Exchange.FILE_NAME,
                 "sub/hello.txt");
 
         assertTrue(notify.matchesWaitTime());

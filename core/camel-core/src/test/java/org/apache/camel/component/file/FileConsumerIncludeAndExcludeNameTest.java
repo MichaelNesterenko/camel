@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -35,16 +37,16 @@ public class FileConsumerIncludeAndExcludeNameTest extends ContextTestSupport {
 
         sendFiles();
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     private void sendFiles() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
-        template.sendBodyAndHeader(fileUri(), "Report 1", Exchange.FILE_NAME, "report1.xml");
-        template.sendBodyAndHeader(fileUri(), "Report 2", Exchange.FILE_NAME, "report2.txt");
-        template.sendBodyAndHeader(fileUri(), "Report 3", Exchange.FILE_NAME, "report3.txt");
-        template.sendBodyAndHeader(fileUri(), "Report 4", Exchange.FILE_NAME, "Report4.txt");
-        template.sendBodyAndHeader(fileUri(), "Secret", Exchange.FILE_NAME, "Secret.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Report 1", Exchange.FILE_NAME, "report1.xml");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Report 2", Exchange.FILE_NAME, "report2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Report 3", Exchange.FILE_NAME, "report3.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Report 4", Exchange.FILE_NAME, "Report4.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Secret", Exchange.FILE_NAME, "Secret.txt");
     }
 
     @Override

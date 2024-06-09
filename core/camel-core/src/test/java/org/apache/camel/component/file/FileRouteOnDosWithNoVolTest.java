@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -51,9 +53,9 @@ public class FileRouteOnDosWithNoVolTest extends ContextTestSupport {
         mock.expectedMessageCount(1);
         mock.expectedFileExists(path + "/route/out/hello.txt");
 
-        template.sendBodyAndHeader("file://" + path + "/route/poller", "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri("file://" + path + "/route/poller"), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -61,9 +63,9 @@ public class FileRouteOnDosWithNoVolTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        template.sendBodyAndHeader("file://" + path + "/from/poller", "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri("file://" + path + "/from/poller"), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -74,7 +76,7 @@ public class FileRouteOnDosWithNoVolTest extends ContextTestSupport {
 
         template.sendBodyAndHeader("direct:report", "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

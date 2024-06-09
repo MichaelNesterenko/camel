@@ -28,7 +28,6 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
@@ -37,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Isolated
 public class FileConcurrentWriteAppendSameFileTest extends ContextTestSupport {
@@ -79,15 +79,11 @@ public class FileConcurrentWriteAppendSameFileTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(size);
         mock.expectsNoDuplicates(body());
-        mock.setResultWaitTime(30000);
 
         context.getRouteController().startRoute("foo");
 
-        // we need to wait a bit for our slow CI server to make sure the entire
-        // file is written on disc
-        Awaitility.await().atMost(500, TimeUnit.MILLISECONDS).until(this::fileIsOk);
-
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        assertTrue(fileIsOk());
 
         // check the file has correct number of lines
         String txt = new String(Files.readAllBytes(testFile("outbox/result.txt")));

@@ -16,6 +16,8 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
@@ -37,10 +39,9 @@ public class FileConsumerFilterFileTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(0);
 
-        template.sendBodyAndHeader(fileUri(), "This is a file to be filtered", Exchange.FILE_NAME, "skipme.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "This is a file to be filtered", Exchange.FILE_NAME, "skipme.txt");
 
-        mock.setResultWaitTime(100);
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -49,10 +50,10 @@ public class FileConsumerFilterFileTest extends ContextTestSupport {
         mock.expectedMessageCount(1);
         mock.expectedBodiesReceived("Hello World");
 
-        template.sendBodyAndHeader(fileUri(), "This is a file to be filtered", Exchange.FILE_NAME, "skipme2.txt");
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "This is a file to be filtered", Exchange.FILE_NAME, "skipme2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -60,9 +61,9 @@ public class FileConsumerFilterFileTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result2");
         mock.expectedBodiesReceived("Something else");
 
-        template.sendBodyAndHeader(fileUri(), "Something else", Exchange.FILE_NAME, "hello2.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Something else", Exchange.FILE_NAME, "hello2.txt");
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

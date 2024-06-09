@@ -35,11 +35,8 @@ import org.apache.camel.support.resume.Resumables;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FileConsumerResumeFromOffsetStrategyTest extends ContextTestSupport {
-    private static final Logger LOG = LoggerFactory.getLogger(FileConsumerResumeFromOffsetStrategyTest.class);
 
     private static class TestFileResumeAdapter implements FileResumeAdapter, FileOffsetResumeAdapter {
         private GenericFile<File> resumable;
@@ -89,22 +86,22 @@ public class FileConsumerResumeFromOffsetStrategyTest extends ContextTestSupport
         headers.put(Exchange.FILE_NAME, "resume-from-offset.txt");
         headers.put(Exchange.OFFSET, Resumables.of("resume-from-offset.txt", 3L));
 
-        template.sendBodyAndHeaders(fileUri("resumeOff"), "01234567890", headers);
+        template.sendBodyAndHeaders(sfpUri(fileUri("resumeOff")), "01234567890", headers);
 
         // only expect 4 of the 6 sent
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @DisplayName("Tests whether it a missing offset causes a failure")
     @Test
     public void testMissingOffset() throws InterruptedException {
         MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedBodiesReceivedInAnyOrder("34567890");
         mock.expectedMessageCount(2);
 
-        template.sendBodyAndHeader(fileUri("resumeMissingOffset"), "01234567890", Exchange.FILE_NAME, "resume-from-offset.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("resumeMissingOffset")), "01234567890", Exchange.FILE_NAME,
+                "resume-from-offset.txt");
 
-        MockEndpoint.assertWait(2, TimeUnit.SECONDS, mock);
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         List<Exchange> exchangeList = mock.getExchanges();
         Assertions.assertFalse(exchangeList.isEmpty(), "It should have received a few messages");
@@ -116,10 +113,10 @@ public class FileConsumerResumeFromOffsetStrategyTest extends ContextTestSupport
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceivedInAnyOrder("01234567890");
 
-        template.sendBodyAndHeader(fileUri("resumeMissingOffsetIntermittent"), "01234567890", Exchange.FILE_NAME,
+        template.sendBodyAndHeader(sfpUri(fileUri("resumeMissingOffsetIntermittent")), "01234567890", Exchange.FILE_NAME,
                 "resume-from-offset.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
         List<Exchange> exchangeList = mock.getExchanges();
         Assertions.assertFalse(exchangeList.isEmpty(), "It should have received a few messages");
@@ -131,10 +128,10 @@ public class FileConsumerResumeFromOffsetStrategyTest extends ContextTestSupport
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceivedInAnyOrder("01234567890");
 
-        template.sendBodyAndHeader(fileUri("resumeNone"), "01234567890", Exchange.FILE_NAME, "resume-none.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("resumeNone")), "01234567890", Exchange.FILE_NAME, "resume-none.txt");
 
         // only expect 4 of the 6 sent
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

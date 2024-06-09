@@ -16,10 +16,11 @@
  */
 package org.apache.camel.component.file;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -29,15 +30,14 @@ public class FileConsumerDirectoryNotMatchedTest extends ContextTestSupport {
 
     @Test
     public void testSkipDirectories() throws Exception {
-        template.sendBodyAndHeader(fileUri(), "This is a dot file", Exchange.FILE_NAME, ".skipme");
-        template.sendBodyAndHeader(fileUri(), "This is a web file", Exchange.FILE_NAME, "index.html");
-        template.sendBodyAndHeader(fileUri("2007"), "2007 report", Exchange.FILE_NAME, "report2007.txt");
-        template.sendBodyAndHeader(fileUri("2008"), "2008 report", Exchange.FILE_NAME, "report2008.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "This is a dot file", Exchange.FILE_NAME, ".skipme");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "This is a web file", Exchange.FILE_NAME, "index.html");
+        template.sendBodyAndHeader(sfpUri(fileUri("2007")), "2007 report", Exchange.FILE_NAME, "report2007.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri("2008")), "2008 report", Exchange.FILE_NAME, "report2008.txt");
 
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedMessageCount(2);
+        getMockEndpoint("mock:result").expectedMessageCount(2);
 
-        mock.assertIsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
     }
 
     @Override

@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,24 +33,24 @@ public class FilerConsumerShouldSkipDoneFileTest extends ContextTestSupport {
         getMockEndpoint("mock:result").expectedMessageCount(0);
 
         // write the done file
-        template.sendBodyAndHeader(fileUri(), "", Exchange.FILE_NAME, "done");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "", Exchange.FILE_NAME, "done");
 
         // wait a bit and it should not pickup the written file as there are no
         // target file
-        Awaitility.await().pollDelay(250, TimeUnit.MILLISECONDS).untilAsserted(() -> assertMockEndpointsSatisfied());
-
-        resetMocks();
-        oneExchangeDone.reset();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
+        oneExchangeDone.matchesWaitTime();
 
         // done file should exist
         assertFileExists(testFile("done"));
 
+        resetMocks();
+        oneExchangeDone.reset();
         getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
 
         // write the target file
-        template.sendBodyAndHeader(fileUri(), "Hello World", Exchange.FILE_NAME, "hello.txt");
+        template.sendBodyAndHeader(sfpUri(fileUri()), "Hello World", Exchange.FILE_NAME, "hello.txt");
 
-        assertMockEndpointsSatisfied();
+        assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
         oneExchangeDone.matchesWaitTime();
 
         // done file should be deleted now

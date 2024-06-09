@@ -25,14 +25,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledOnOs(OS.AIX)
-@DisabledIfSystemProperty(named = "ci.env.name", matches = "github.com", disabledReason = "Flaky on GitHub Actions")
 public class ManagedConcurrentThrottlerTest extends AbstractManagedThrottlerTest {
 
     @Test
@@ -43,7 +41,6 @@ public class ManagedConcurrentThrottlerTest extends AbstractManagedThrottlerTest
         assertTrue(total < 1200, "Should take at most 1.2 sec: was " + total);
     }
 
-    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void testThrottleVisibleViaJmx() throws Exception {
         super.runTestThrottleAsyncVisibleViaJmx();
